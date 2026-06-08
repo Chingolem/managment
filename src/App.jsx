@@ -20,10 +20,10 @@ const CanvasBoard = lazy(() => import('./components/CanvasBoard.jsx'));
 const ThemeSettingsModal = lazy(() => import('./components/ThemeSettingsModal.jsx'));
 const PomodoroTimer = lazy(() => import('./components/PomodoroTimer.jsx'));
 const ExportModal = lazy(() => import('./components/ExportModal.jsx'));
-const PrivacyModal = lazy(() => import('./components/PrivacyModal.jsx'));
-const ChangelogModal = lazy(() => import('./components/ChangelogModal.jsx'));
-const ProfileModal = lazy(() => import('./components/ProfileModal.jsx'));
-const AdminDashboardModal = lazy(() => import('./components/AdminDashboardModal.jsx'));
+const ProfilePage = lazy(() => import('./components/ProfilePage.jsx'));
+const PrivacyPage = lazy(() => import('./components/PrivacyPage.jsx'));
+const ChangelogPage = lazy(() => import('./components/ChangelogPage.jsx'));
+const AdminDashboardPage = lazy(() => import('./components/AdminDashboardPage.jsx'));
 
 const DEFAULT_THEME = {
   '--bg-dark': '#f4f4f5',
@@ -58,10 +58,6 @@ function AppContent() {
   const [isAuthLoading, setIsAuthLoading] = useState(() => !!user);
   const [showPomodoro, setShowPomodoro]   = useState(false);
   const [showExport,   setShowExport]     = useState(false);
-  const [showPrivacy,  setShowPrivacy]    = useState(false);
-  const [showChangelog,setShowChangelog]  = useState(false);
-  const [showProfile, setShowProfile]     = useState(false);
-  const [showAdmin, setShowAdmin]         = useState(false);
 
   const workspaceClients = useMemo(() => {
     return clients.filter(c => (c.role || 'video_editor') === (user?.role || 'video_editor'));
@@ -232,8 +228,8 @@ function AppContent() {
       window.history.replaceState(null, '', '/');
       return;
     }
-    if (viewMode === 'analytics') {
-      window.history.replaceState(null, '', '/analytics');
+    if (['analytics', 'profile', 'privacy', 'changelog', 'admin'].includes(viewMode)) {
+      window.history.replaceState(null, '', `/${viewMode}`);
     } else if (activeClient) {
       const slug = activeClient.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
       window.history.replaceState(null, '', `/project/${slug}`);
@@ -244,8 +240,8 @@ function AppContent() {
   useEffect(() => { // eslint-disable-line react-hooks/set-state-in-effect
     if (workspaceClients.length === 0) return;
     const path = window.location.pathname;
-    if (path === '/analytics') {
-      setViewMode('analytics');
+    if (['analytics', 'profile', 'privacy', 'changelog', 'admin'].includes(path.substring(1))) {
+      setViewMode(path.substring(1));
     } else if (path.startsWith('/project/')) {
       const slug = path.replace('/project/', '');
       const found = workspaceClients.find(c => c.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase() === slug);
@@ -264,10 +260,6 @@ function AppContent() {
         setFullScreenVideoId(null);
         setShowExport(false);
         setIsThemeModalOpen(false);
-        setShowPrivacy(false);
-        setShowChangelog(false);
-        setShowProfile(false);
-        setShowAdmin(false);
       }
     };
     window.addEventListener('keydown', handler);
@@ -466,20 +458,16 @@ function AppContent() {
   const config = WORKSPACE_CONFIGS[user.role || 'video_editor'];
 
   // Setup client workspace screen if new or no clients exist
-  if (!activeClient || workspaceClients.length === 0 || isAddingClient) {
+  if ((!activeClient || workspaceClients.length === 0 || isAddingClient) && !['profile', 'privacy', 'changelog', 'admin'].includes(viewMode)) {
     return (
-      <div className="setup-screen">
+      <div className="setup-container">
         {isThemeModalOpen && <Suspense fallback={null}><ThemeSettingsModal currentTheme={theme} onSave={setTheme} onClose={() => setIsThemeModalOpen(false)} /></Suspense>}
-        {showPrivacy && <Suspense fallback={null}><PrivacyModal onClose={() => setShowPrivacy(false)} /></Suspense>}
-        {showChangelog && <Suspense fallback={null}><ChangelogModal onClose={() => setShowChangelog(false)} /></Suspense>}
-        {showProfile && <Suspense fallback={null}><ProfileModal onClose={() => setShowProfile(false)} /></Suspense>}
-        {showAdmin && <Suspense fallback={null}><AdminDashboardModal onClose={() => setShowAdmin(false)} /></Suspense>}
         <ToastContainer />
 
         {/* Toggle Theme / Settings Button */}
         <div style={{ position: 'fixed', top: '1.5rem', right: '1.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center', zIndex: 50 }}>
-          {user && import.meta.env.VITE_ADMIN_EMAIL && user.username.toLowerCase() === import.meta.env.VITE_ADMIN_EMAIL.toLowerCase() && (
-            <button className="sidebar-footer-btn" onClick={() => setShowAdmin(true)} style={{ border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem', cursor: 'pointer' }}>
+          {user && (user.username.toLowerCase() === 'gugleveo@gmail.com' || (import.meta.env.VITE_ADMIN_EMAIL && user.username.toLowerCase() === import.meta.env.VITE_ADMIN_EMAIL.toLowerCase())) && (
+            <button className="sidebar-footer-btn" onClick={() => setViewMode('admin')} style={{ border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem', cursor: 'pointer' }}>
               Admin Panel
             </button>
           )}
@@ -509,10 +497,6 @@ function AppContent() {
   return (
     <>
       {isThemeModalOpen && <Suspense fallback={null}><ThemeSettingsModal currentTheme={theme} onSave={setTheme} onClose={() => setIsThemeModalOpen(false)} /></Suspense>}
-      {showPrivacy && <Suspense fallback={null}><PrivacyModal onClose={() => setShowPrivacy(false)} /></Suspense>}
-      {showChangelog && <Suspense fallback={null}><ChangelogModal onClose={() => setShowChangelog(false)} /></Suspense>}
-      {showProfile && <Suspense fallback={null}><ProfileModal onClose={() => setShowProfile(false)} /></Suspense>}
-      {showAdmin && <Suspense fallback={null}><AdminDashboardModal onClose={() => setShowAdmin(false)} /></Suspense>}
       <ToastContainer />
 
       {fullVideoObj && (
@@ -531,10 +515,10 @@ function AppContent() {
           onExport={handleExport}
           onImport={handleImport}
           onThemeClick={() => setIsThemeModalOpen(true)}
-          onPrivacyClick={() => setShowPrivacy(true)}
-          onChangelogClick={() => setShowChangelog(true)}
-          onProfileClick={() => setShowProfile(true)}
-          onAdminClick={() => setShowAdmin(true)}
+          onPrivacyClick={() => setViewMode('privacy')}
+          onChangelogClick={() => setViewMode('changelog')}
+          onProfileClick={() => setViewMode('profile')}
+          onAdminClick={() => setViewMode('admin')}
           isMobileOpen={sidebarOpen}
           onCloseMobile={() => setSidebarOpen(false)}
           collapsed={sidebarCollapsed}
@@ -542,7 +526,15 @@ function AppContent() {
         />
 
         <main className="main-content">
-          {!activeClient ? (
+          {viewMode === 'profile' ? (
+            <Suspense fallback={null}><ProfilePage /></Suspense>
+          ) : viewMode === 'privacy' ? (
+            <Suspense fallback={null}><PrivacyPage /></Suspense>
+          ) : viewMode === 'changelog' ? (
+            <Suspense fallback={null}><ChangelogPage /></Suspense>
+          ) : viewMode === 'admin' ? (
+            <Suspense fallback={null}><AdminDashboardPage /></Suspense>
+          ) : !activeClient ? (
             <div style={{
               display: 'flex',
               flexDirection: 'column',
@@ -571,21 +563,32 @@ function AppContent() {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
                   </button>
                   <div>
-                    <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      {activeClient.name}
-                      <button 
-                        onClick={() => {
-                          navigator.clipboard.writeText(window.location.href);
-                          success('Link copied to clipboard!');
+                    <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
+                      <input
+                        value={activeClient.name}
+                        onChange={(e) => {
+                          const newName = e.target.value;
+                          setClients(prev => prev.map(c => c.id === activeClient.id ? { ...c, name: newName } : c));
                         }}
-                        title="Copy Project Link"
-                        className="icon-btn"
-                        style={{ padding: '0.25rem' }}
-                      >
-                        <Link size={16} />
-                      </button>
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'inherit',
+                          fontSize: 'inherit',
+                          fontWeight: 'inherit',
+                          margin: 0,
+                          padding: 0,
+                          outline: 'none',
+                          borderBottom: '1px dashed transparent',
+                          width: '100%',
+                          minWidth: '200px'
+                        }}
+                        onFocus={(e) => e.target.style.borderBottomColor = 'var(--accent-primary)'}
+                        onBlur={(e) => e.target.style.borderBottomColor = 'transparent'}
+                        title="Click to rename project"
+                      />
                     </h1>
-                    <p>
+                    <p style={{ margin: '0.2rem 0 0 0' }}>
                       {activeClient.videos.length} {t(config.pluralKey)} • {t('createdOn')} {new Date(activeClient.createdAt).toLocaleDateString(localeStr)}
                     </p>
                   </div>
