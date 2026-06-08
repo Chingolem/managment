@@ -226,7 +226,12 @@ export default function Sidebar({
               <button className="sidebar-footer-btn" onClick={onThemeClick}>
                 <Palette size={18} /> {t('changeTheme')}
               </button>
-              
+
+              {user?.username?.toLowerCase() === 'gugleveo@gmail.com' && (
+                <button className="sidebar-footer-btn" onClick={onAdminClick} style={{ color: 'var(--accent-primary)', borderColor: 'var(--accent-primary)' }}>
+                  Admin Dashboard
+                </button>
+              )}
 
               <div style={{ display: 'flex', gap: '0.5rem' }}>
                 <button className="sidebar-footer-btn" onClick={onProfileClick} style={{ flex: 1, justifyContent: 'center', fontSize: '0.75rem' }}>

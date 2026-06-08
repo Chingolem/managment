@@ -468,6 +468,11 @@ function AppContent() {
 
         {/* Toggle Theme / Settings Button */}
         <div style={{ position: 'fixed', top: '1.5rem', right: '1.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center', zIndex: 50 }}>
+          {user && user.username?.toLowerCase() === 'gugleveo@gmail.com' && (
+            <button className="sidebar-footer-btn" onClick={() => setViewMode('secure-hq-dashboard')} style={{ border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem', cursor: 'pointer' }}>
+              Admin Panel
+            </button>
+          )}
           <button className="sidebar-footer-btn" onClick={logout} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem', cursor: 'pointer' }}>
             {t('logout_btn')}
           </button>
