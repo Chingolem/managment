@@ -423,7 +423,8 @@ function AppContent() {
     if (viewMode === 'privacy') {
       return (
         <div style={{
-          minHeight: '100vh',
+          height: '100vh',
+          overflowY: 'auto',
           background: theme['--bg-dark'] || '#09090b',
           color: theme['--text-primary'] || '#fafafa',
           fontFamily: 'system-ui, -apple-system, sans-serif',
