@@ -19,6 +19,7 @@ export default function ExportModal({ client, onClose }) {
   const [format, setFormat] = useState('pdf');
   const [includeNotes, setIncludeNotes] = useState(true);
   const [includeTime, setIncludeTime] = useState(true);
+  const [includeIdleTime, setIncludeIdleTime] = useState(true);
   const [includeLinks, setIncludeLinks] = useState(true);
   const [includePrice, setIncludePrice] = useState(true);
 
@@ -32,9 +33,13 @@ export default function ExportModal({ client, onClose }) {
     videos.filter(v => (v[keys.status] || 'not_started') === 'finished').reduce((a, v) => a + (v.price || 0), 0), [videos, keys]);
   const doneCount = videos.filter(v => (v[keys.status] || 'not_started') === 'finished').length;
 
+  const activeTime = useMemo(() => totalTime - totalIdleTime, [totalTime, totalIdleTime]);
+
+  const activeTime = useMemo(() => totalTime - totalIdleTime, [totalTime, totalIdleTime]);
+
   /* ── CSV export ───────────────────────────────────────────────── */
   const exportCSV = () => {
-    const headers = ['#', 'Title', 'Video Length', 'Status', includeTime && 'Time Worked', includeTime && 'Idle Time', includePrice && 'Price ($)', includeNotes && 'Notes', includeLinks && 'Source Link', includeLinks && 'Final Link', 'Deadline', 'Completions'].filter(Boolean);
+    const headers = ['#', 'Title', 'Video Length', 'Status', includeTime && 'Time Worked', includeIdleTime && 'Idle Time', includePrice && 'Price ($)', includeNotes && 'Notes', includeLinks && 'Source Link', includeLinks && 'Final Link', 'Deadline', 'Completions'].filter(Boolean);
     const rows = videos.map((v, i) => {
       const vStatus = v[keys.status] || 'not_started';
       const vTotalSeconds = v[keys.totalSeconds] || 0;
@@ -48,7 +53,7 @@ export default function ExportModal({ client, onClose }) {
         vStatus.replace('_', ' '),
       ];
       if (includeTime)  row.push(formatTime(vTotalSeconds));
-      if (includeTime)  row.push(formatTime(vIdleSeconds));
+      if (includeIdleTime)  row.push(formatTime(vIdleSeconds));
       if (includePrice) row.push(v.price || 0);
       if (includeNotes) row.push(`"${(v.noteDetails || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`);
       if (includeLinks) { row.push(v.sourceLink || ''); row.push(v.finalLink || ''); }
@@ -114,7 +119,7 @@ export default function ExportModal({ client, onClose }) {
             </span>
           </td>
           ${includeTime  ? `<td style="padding:10px 8px;font-family:monospace">${formatTime(vTotalSeconds)}</td>` : ''}
-          ${includeTime  ? `<td style="padding:10px 8px;font-family:monospace;color:#f59e0b">${formatTime(vIdleSeconds)}</td>` : ''}
+          ${includeIdleTime  ? `<td style="padding:10px 8px;font-family:monospace;color:#f59e0b">${formatTime(vIdleSeconds)}</td>` : ''}
           ${includePrice ? `<td style="padding:10px 8px;font-weight:700">$${v.price || 0}</td>` : ''}
           ${includeLinks ? `<td style="padding:10px 8px;font-size:11px;color:#3b82f6">${linksHtml}</td>` : ''}
           ${notesHtml}
@@ -149,7 +154,8 @@ export default function ExportModal({ client, onClose }) {
         <div>
           <div class="stat"><div class="stat-val">${doneCount}/${videos.length}</div><div class="stat-lbl">Tasks Completed</div></div>
           ${includeTime  ? `<div class="stat"><div class="stat-val">${formatTime(totalTime)}</div><div class="stat-lbl">Total Time Worked</div></div>` : ''}
-          ${includeTime  ? `<div class="stat"><div class="stat-val" style="color:#f59e0b">${formatTime(totalIdleTime)}</div><div class="stat-lbl">Total Idle Time</div></div>` : ''}
+          ${includeIdleTime  ? `<div class="stat"><div class="stat-val" style="color:#f59e0b">${formatTime(totalIdleTime)}</div><div class="stat-lbl">Total Idle Time</div></div>` : ''}
+          ${includeIdleTime  ? `<div class="stat"><div class="stat-val" style="color:var(--accent-primary)">${formatTime(activeTime)}</div><div class="stat-lbl">Active Time</div></div>` : ''}
           ${includePrice ? `<div class="stat"><div class="stat-val" style="color:#10b981">$${totalRevenue.toFixed(2)}</div><div class="stat-lbl">Revenue Earned</div></div>` : ''}
         </div>
 
@@ -158,7 +164,7 @@ export default function ExportModal({ client, onClose }) {
             <tr>
               <th>#</th><th>Title</th><th>Length</th><th>Status</th>
               ${includeTime  ? '<th>Time Worked</th>'      : ''}
-              ${includeTime  ? '<th>Idle Time</th>'        : ''}
+              ${includeIdleTime  ? '<th>Idle Time</th>'        : ''}
               ${includePrice ? '<th>Price</th>'     : ''}
               ${includeLinks ? '<th>Links</th>'     : ''}
               ${includeNotes ? '<th>Notes</th>'     : ''}
@@ -246,7 +252,7 @@ export default function ExportModal({ client, onClose }) {
               { label: 'Total Time', val: formatTime(totalTime), color: 'var(--accent-primary)' },
               { label: 'Idle Time', val: formatTime(totalIdleTime), color: '#f59e0b' },
               { label: 'Revenue', val: `$${totalRevenue.toFixed(2)}`, color: '#10b981' },
-            ].map(s => (
+            ].filter(s => !(s.label === 'Idle Time' && !includeIdleTime)).map(s => (
               <div key={s.label} style={{ background: 'var(--bg-surface)', borderRadius: '10px', padding: '0.75rem', textAlign: 'center' }}>
                 <div style={{ fontSize: '1.1rem', fontWeight: '800', color: s.color }}>{s.val}</div>
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>{s.label}</div>
@@ -272,6 +278,7 @@ export default function ExportModal({ client, onClose }) {
           <div>
             <div style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.35rem' }}>Include in export</div>
             {toggle('Time Worked', includeTime, setIncludeTime)}
+            {toggle('Idle Time', includeIdleTime, setIncludeIdleTime)}
             {toggle('Price / Revenue', includePrice, setIncludePrice)}
             {toggle('Task Notes', includeNotes, setIncludeNotes)}
             {toggle('Source & Final Links', includeLinks, setIncludeLinks)}
