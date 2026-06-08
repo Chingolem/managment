@@ -81,6 +81,15 @@ function AppContent() {
     setPreviousUser(user);
   }, [user, previousUser]);
 
+  // Clear state when user logs out
+  useEffect(() => {
+    if (!user) {
+      setClients([]);
+      setArchivedClients([]);
+      setActiveClientId(null);
+    }
+  }, [user]);
+
   // Deadline notifications (runs once per login session)
   useEffect(() => {
     if (!user || !clients.length) return;
