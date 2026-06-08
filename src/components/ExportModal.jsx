@@ -35,8 +35,6 @@ export default function ExportModal({ client, onClose }) {
 
   const activeTime = useMemo(() => totalTime - totalIdleTime, [totalTime, totalIdleTime]);
 
-  const activeTime = useMemo(() => totalTime - totalIdleTime, [totalTime, totalIdleTime]);
-
   /* ── CSV export ───────────────────────────────────────────────── */
   const exportCSV = () => {
     const headers = ['#', 'Title', 'Video Length', 'Status', includeTime && 'Time Worked', includeIdleTime && 'Idle Time', includePrice && 'Price ($)', includeNotes && 'Notes', includeLinks && 'Source Link', includeLinks && 'Final Link', 'Deadline', 'Completions'].filter(Boolean);
