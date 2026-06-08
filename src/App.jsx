@@ -229,6 +229,10 @@ function AppContent() {
     if (window.location.hash.includes('access_token=') || window.location.hash.includes('error=')) {
       return;
     }
+    if (user && (!activeClient || workspaceClients.length === 0 || isAddingClient) && !['profile', 'privacy', 'changelog', 'stats'].includes(viewMode)) {
+      window.history.replaceState(null, '', '/setup');
+      return;
+    }
     if (!activeClient && workspaceClients.length === 0) {
       window.history.replaceState(null, '', '/');
       return;
@@ -243,13 +247,16 @@ function AppContent() {
         window.history.replaceState(null, '', `/project/${slug}`);
       }
     }
-  }, [viewMode, activeClient, workspaceClients.length]);
+  }, [viewMode, activeClient, workspaceClients.length, isAddingClient, user]);
 
   // Initial load from URL
   useEffect(() => { // eslint-disable-line react-hooks/set-state-in-effect
     const path = window.location.pathname.substring(1);
-    if (['privacy', 'changelog', 'stats'].includes(path)) {
+    if (['privacy', 'changelog', 'stats', 'setup'].includes(path)) {
       setViewMode(path);
+      if (path === 'setup') {
+        setIsAddingClient(true);
+      }
       return;
     }
     if (workspaceClients.length === 0) return;
@@ -496,7 +503,7 @@ function AppContent() {
   // Setup client workspace screen if new or no clients exist
   if ((!activeClient || workspaceClients.length === 0 || isAddingClient) && !['profile', 'privacy', 'changelog', 'stats'].includes(viewMode)) {
     return (
-      <div className="setup-container">
+      <div className="setup-screen">
         {isThemeModalOpen && <Suspense fallback={null}><ThemeSettingsModal currentTheme={theme} onSave={setTheme} onClose={() => setIsThemeModalOpen(false)} /></Suspense>}
         <ToastContainer />
 
