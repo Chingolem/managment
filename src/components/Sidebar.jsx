@@ -40,7 +40,7 @@ function ArchiveDaysItem({ c, t, onRestore, onPermanentDelete }) {
 export default function Sidebar({
   clients, activeClientId, onSelectClient, onAddClick,
   archivedClients, onRestore, onPermanentDelete,
-  onExport, onImport, onThemeClick,
+  onExport, onImport, onThemeClick, onPrivacyClick, onChangelogClick, onProfileClick,
   isMobileOpen, onCloseMobile,
   collapsed, onToggleCollapse
 }) {
@@ -226,6 +226,18 @@ export default function Sidebar({
               <button className="sidebar-footer-btn" onClick={onThemeClick}>
                 <Palette size={18} /> {t('changeTheme')}
               </button>
+              
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button className="sidebar-footer-btn" onClick={onProfileClick} style={{ flex: 1, justifyContent: 'center', fontSize: '0.75rem' }}>
+                  Profile
+                </button>
+                <button className="sidebar-footer-btn" onClick={onChangelogClick} style={{ flex: 1, justifyContent: 'center', fontSize: '0.75rem' }}>
+                  What's New
+                </button>
+                <button className="sidebar-footer-btn" onClick={onPrivacyClick} style={{ flex: 1, justifyContent: 'center', fontSize: '0.75rem' }}>
+                  Privacy
+                </button>
+              </div>
             </>
           )}
 

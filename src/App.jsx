@@ -12,6 +12,7 @@ import ArchiveSection from './components/ArchiveSection.jsx';
 import ToastContainer from './components/Toast.jsx';
 import AuthScreen from './components/AuthScreen.jsx';
 import VideoEditorWorkspace from './components/VideoEditorWorkspace.jsx';
+import { supabase } from './supabaseClient.js';
 
 const Analytics = lazy(() => import('./components/NewAnalytics.jsx'));
 const VideoOverlay = lazy(() => import('./components/VideoOverlay.jsx'));
@@ -19,6 +20,10 @@ const CanvasBoard = lazy(() => import('./components/CanvasBoard.jsx'));
 const ThemeSettingsModal = lazy(() => import('./components/ThemeSettingsModal.jsx'));
 const PomodoroTimer = lazy(() => import('./components/PomodoroTimer.jsx'));
 const ExportModal = lazy(() => import('./components/ExportModal.jsx'));
+const PrivacyModal = lazy(() => import('./components/PrivacyModal.jsx'));
+const ChangelogModal = lazy(() => import('./components/ChangelogModal.jsx'));
+const ProfileModal = lazy(() => import('./components/ProfileModal.jsx'));
+const AdminDashboardModal = lazy(() => import('./components/AdminDashboardModal.jsx'));
 
 const DEFAULT_THEME = {
   '--bg-dark': '#f4f4f5',
@@ -53,6 +58,10 @@ function AppContent() {
   const [isAuthLoading, setIsAuthLoading] = useState(() => !!user);
   const [showPomodoro, setShowPomodoro]   = useState(false);
   const [showExport,   setShowExport]     = useState(false);
+  const [showPrivacy,  setShowPrivacy]    = useState(false);
+  const [showChangelog,setShowChangelog]  = useState(false);
+  const [showProfile, setShowProfile]     = useState(false);
+  const [showAdmin, setShowAdmin]         = useState(false);
 
   const workspaceClients = useMemo(() => {
     return clients.filter(c => (c.role || 'video_editor') === (user?.role || 'video_editor'));
@@ -95,69 +104,90 @@ function AppContent() {
     });
   }, [user, clients]);
 
-  // Load user-specific configurations on login
+  // Load user-specific configurations from Supabase with LocalStorage fallback
   useEffect(() => { // eslint-disable-line react-hooks/set-state-in-effect
     if (!user) return;
 
-    const uPrefix = `editflow_crm_${user.username.toLowerCase()}_`;
+    const loadData = async () => {
+      const uPrefix = `editflow_crm_${user.username.toLowerCase()}_`;
+      
+      // Load local fallback first
+      const savedTheme = localStorage.getItem(uPrefix + 'theme');
+      if (savedTheme) { try { setTheme(JSON.parse(savedTheme)); } catch (e) {} }
+      
+      const savedClients = localStorage.getItem(uPrefix + 'clients');
+      if (savedClients) { try { setClients(JSON.parse(savedClients)); } catch (e) {} }
+      
+      const savedActive = localStorage.getItem(uPrefix + 'active_client');
+      if (savedActive) setActiveClientId(savedActive);
+      
+      const savedArchive = localStorage.getItem(uPrefix + 'archive');
+      if (savedArchive) { try { setArchivedClients(JSON.parse(savedArchive)); } catch (e) {} }
 
-    // Load theme
-    const savedTheme = localStorage.getItem(uPrefix + 'theme');
-    if (savedTheme) {
-      try { setTheme(JSON.parse(savedTheme)); } catch (e) { setTheme(DEFAULT_THEME); }
-    } else {
-      setTheme(DEFAULT_THEME);
-    }
+      // Try fetching from Supabase
+      try {
+        const { data, error } = await supabase
+          .from('workspace_data')
+          .select('*')
+          .eq('username', user.username)
+          .single();
 
-    // Load clients
-    const savedClients = localStorage.getItem(uPrefix + 'clients');
-    if (savedClients) {
-      try { setClients(JSON.parse(savedClients)); } catch (e) { setClients([]); }
-    } else {
-      setClients([]);
-    }
-
-    // Load active client
-    const savedActive = localStorage.getItem(uPrefix + 'active_client');
-    setActiveClientId(savedActive || null);
-
-    // Load archive
-    const savedArchive = localStorage.getItem(uPrefix + 'archive');
-    if (savedArchive) {
-      try { setArchivedClients(JSON.parse(savedArchive)); } catch (e) { setArchivedClients([]); }
-    } else {
-      setArchivedClients([]);
-    }
+        if (data && !error) {
+          if (data.theme) setTheme(data.theme);
+          if (data.clients) setClients(data.clients);
+          if (data.active_client_id) setActiveClientId(data.active_client_id);
+          if (data.archived_clients) setArchivedClients(data.archived_clients);
+          
+          // Update local cache
+          localStorage.setItem(uPrefix + 'theme', JSON.stringify(data.theme || DEFAULT_THEME));
+          localStorage.setItem(uPrefix + 'clients', JSON.stringify(data.clients || []));
+          if (data.active_client_id) localStorage.setItem(uPrefix + 'active_client', data.active_client_id);
+          localStorage.setItem(uPrefix + 'archive', JSON.stringify(data.archived_clients || []));
+        }
+      } catch (err) {
+        console.error('Supabase load error:', err);
+      }
+    };
+    
+    loadData();
   }, [user]);
 
-  // Sync state changes to user-specific localStorage keys
+  // Sync state changes to user-specific localStorage keys and Supabase
   useEffect(() => {
     if (!user) return;
     const uPrefix = `editflow_crm_${user.username.toLowerCase()}_`;
+    
+    // Local backup
     localStorage.setItem(uPrefix + 'theme', JSON.stringify(theme));
-  }, [theme, user]);
-
-  useEffect(() => {
-    if (!user) return;
-    const uPrefix = `editflow_crm_${user.username.toLowerCase()}_`;
     localStorage.setItem(uPrefix + 'clients', JSON.stringify(clients));
-  }, [clients, user]);
-
-  useEffect(() => {
-    if (!user) return;
-    const uPrefix = `editflow_crm_${user.username.toLowerCase()}_`;
     if (activeClientId) {
       localStorage.setItem(uPrefix + 'active_client', activeClientId);
     } else {
       localStorage.removeItem(uPrefix + 'active_client');
     }
-  }, [activeClientId, user]);
-
-  useEffect(() => {
-    if (!user) return;
-    const uPrefix = `editflow_crm_${user.username.toLowerCase()}_`;
     localStorage.setItem(uPrefix + 'archive', JSON.stringify(archivedClients));
-  }, [archivedClients, user]);
+
+    // Supabase sync (debounced slightly by the timeout to prevent spamming)
+    const syncToCloud = async () => {
+      try {
+        await supabase
+          .from('workspace_data')
+          .upsert({
+            username: user.username,
+            theme,
+            clients,
+            active_client_id: activeClientId,
+            archived_clients: archivedClients,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'username' });
+      } catch (err) {
+        console.error('Supabase sync error:', err);
+      }
+    };
+
+    const timeoutId = setTimeout(syncToCloud, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [theme, clients, activeClientId, archivedClients, user]);
 
   // Apply theme variables globally
   useEffect(() => {
@@ -187,9 +217,17 @@ function AppContent() {
     }
   }, [workspaceClients, activeClientId, setActiveClientId]);
 
-  // Handle Escape key closure of modal
+  // Handle Escape key closure of modal and Hidden Admin Shortcut
   useEffect(() => {
     const handler = (e) => {
+      // Hidden Admin Shortcut: Ctrl + Alt + A (Only works for the admin email)
+      if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'a') {
+        const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
+        if (user && adminEmail && user.username.toLowerCase() === adminEmail.toLowerCase()) {
+          setShowAdmin(prev => !prev);
+        }
+      }
+
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
       if (e.key === 'Escape' && fullScreenVideoId) {
         setFullScreenVideoId(null);
@@ -395,11 +433,24 @@ function AppContent() {
     return (
       <div className="setup-screen">
         {isThemeModalOpen && <Suspense fallback={null}><ThemeSettingsModal currentTheme={theme} onSave={setTheme} onClose={() => setIsThemeModalOpen(false)} /></Suspense>}
+        {showPrivacy && <Suspense fallback={null}><PrivacyModal onClose={() => setShowPrivacy(false)} /></Suspense>}
+        {showChangelog && <Suspense fallback={null}><ChangelogModal onClose={() => setShowChangelog(false)} /></Suspense>}
+        {showProfile && <Suspense fallback={null}><ProfileModal onClose={() => setShowProfile(false)} /></Suspense>}
+        {showAdmin && <Suspense fallback={null}><AdminDashboardModal onClose={() => setShowAdmin(false)} /></Suspense>}
         <ToastContainer />
 
         {/* Toggle Theme / Settings Button */}
-        <div style={{ position: 'fixed', top: '1.5rem', right: '1.5rem', display: 'flex', gap: '0.5rem' }}>
-          <button className="sidebar-footer-btn" onClick={logout} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem' }}>
+        <div style={{ position: 'fixed', top: '1.5rem', right: '1.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <button className="sidebar-footer-btn" onClick={() => setShowProfile(true)} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem' }}>
+            Profile Settings
+          </button>
+          <button className="sidebar-footer-btn" onClick={() => setShowChangelog(true)} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem' }}>
+            What's New
+          </button>
+          <button className="sidebar-footer-btn" onClick={() => setShowPrivacy(true)} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem' }}>
+            Privacy
+          </button>
+          <button className="sidebar-footer-btn" onClick={logout} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem' }}>
             {t('logout_btn')}
           </button>
           <button className="icon-btn" onClick={() => setIsThemeModalOpen(true)} title={t('changeTheme')}>
@@ -425,6 +476,10 @@ function AppContent() {
   return (
     <>
       {isThemeModalOpen && <Suspense fallback={null}><ThemeSettingsModal currentTheme={theme} onSave={setTheme} onClose={() => setIsThemeModalOpen(false)} /></Suspense>}
+      {showPrivacy && <Suspense fallback={null}><PrivacyModal onClose={() => setShowPrivacy(false)} /></Suspense>}
+      {showChangelog && <Suspense fallback={null}><ChangelogModal onClose={() => setShowChangelog(false)} /></Suspense>}
+      {showProfile && <Suspense fallback={null}><ProfileModal onClose={() => setShowProfile(false)} /></Suspense>}
+      {showAdmin && <Suspense fallback={null}><AdminDashboardModal onClose={() => setShowAdmin(false)} /></Suspense>}
       <ToastContainer />
 
       {fullVideoObj && (
@@ -443,6 +498,9 @@ function AppContent() {
           onExport={handleExport}
           onImport={handleImport}
           onThemeClick={() => setIsThemeModalOpen(true)}
+          onPrivacyClick={() => setShowPrivacy(true)}
+          onChangelogClick={() => setShowChangelog(true)}
+          onProfileClick={() => setShowProfile(true)}
           isMobileOpen={sidebarOpen}
           onCloseMobile={() => setSidebarOpen(false)}
           collapsed={sidebarCollapsed}

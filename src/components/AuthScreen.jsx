@@ -782,7 +782,7 @@ export default function AuthScreen({ theme, setTheme }) {
   const [modalTab, setModalTab] = useState('signin'); // 'signin' | 'register'
 
   // Input states
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [discordId, setDiscordId] = useState('');
@@ -826,12 +826,12 @@ export default function AuthScreen({ theme, setTheme }) {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
-    if (!username.trim() || !password.trim()) return;
+    if (!email.trim() || !password.trim()) return;
 
     setIsSubmitting(true);
 
     if (modalTab === 'signin') {
-      const isSuccess = await login(username.trim(), password, rememberMe);
+      const isSuccess = await login(email.trim(), password);
       if (!isSuccess) {
         setIsSubmitting(false);
       }
@@ -842,10 +842,10 @@ export default function AuthScreen({ theme, setTheme }) {
         setIsSubmitting(false);
         return;
       }
-      const isSuccess = await signup(username.trim(), password, discordId);
+      const isSuccess = await signup(email.trim(), password);
       if (isSuccess) {
         // Automatically login the user after successful registration
-        await login(username.trim(), password, rememberMe);
+        await login(email.trim(), password);
         setShowLoginModal(false);
         setPassword('');
         setConfirmPassword('');
@@ -1051,7 +1051,7 @@ export default function AuthScreen({ theme, setTheme }) {
                       <div className="auth-modal-step-num">1</div>
                       <div>
                         <div className="auth-modal-step-label">Create Account</div>
-                        <div className="auth-modal-step-desc">Choose your username & password</div>
+                        <div className="auth-modal-step-desc">Choose your email & password</div>
                       </div>
                     </div>
                     <div className="auth-modal-step">
@@ -1146,18 +1146,17 @@ export default function AuthScreen({ theme, setTheme }) {
 
               <form onSubmit={handleFormSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div className="auth-modal-field">
-                  <label className="auth-modal-label">Username</label>
+                  <label className="auth-modal-label">Email</label>
                   <input
-                    type="text"
+                    type="email"
                     className="auth-modal-input"
-                    value={username}
-                    onChange={e => setUsername(e.target.value)}
-                    placeholder="alex"
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    placeholder="name@example.com"
                     required
-                    autoComplete="username"
+                    autoComplete="email"
                   />
                 </div>
-
 
                 <div className="auth-modal-field">
                   <label className="auth-modal-label">Password</label>
