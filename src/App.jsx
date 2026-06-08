@@ -327,11 +327,7 @@ function AppContent() {
       setViewMode('dashboard');
       return;
     }
-    if (['privacy', 'changelog', 'stats'].includes(path)) {
-      setViewMode(path);
-      return;
-    }
-    if (['analytics', 'profile'].includes(path)) {
+    if (['privacy', 'changelog', 'stats', 'analytics', 'profile', 'whats_new'].includes(path)) {
       setViewMode(path);
       return;
     }
