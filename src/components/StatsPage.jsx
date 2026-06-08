@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Activity, Users, Clock, Video, ShieldAlert } from 'lucide-react';
 import { supabase } from '../supabaseClient.js';
 
-export default function AdminDashboardPage() {
+export default function StatsPage() {
   const [stats, setStats] = useState({ users: 0, workspaces: 0, tasks: 0, hours: 0 });
   const [loading, setLoading] = useState(true);
 
