@@ -584,12 +584,20 @@ function AppContent() {
         </div>
       );
     }
-    return (
-      <>
-        <ToastContainer />
-        <AuthScreen theme={theme} setTheme={setTheme} onPrivacyClick={() => setViewMode('privacy')} />
-      </>
-    );
+  return (
+    <>
+      <TutorialOverlay />
+      {isAuthLoading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg-dark)', color: 'var(--text-primary)' }}>
+          Loading...
+        </div>
+      ) : user ? (
+        <AppContent />
+      ) : (
+        <SetupForm />
+      )}
+    </>
+  );
   }
 
   // Facebook-style shimmering loading placeholder
@@ -899,7 +907,16 @@ export default App;
 function App() {
   return (
     <>
-      <AppContent />
+      <TutorialOverlay />
+      {isAuthLoading ? (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg-dark)', color: 'var(--text-primary)' }}>
+          Loading...
+        </div>
+      ) : user ? (
+        <AppContent />
+      ) : (
+        <SetupForm />
+      )}
     </>
   );
 }
