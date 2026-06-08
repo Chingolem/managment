@@ -226,25 +226,23 @@ function AppContent() {
     }
   }, [workspaceClients, activeClientId, setActiveClientId]);
 
-  // Handle Escape key closure of modal and Hidden Admin Shortcut
+  // Handle Escape key closure of modal
   useEffect(() => {
     const handler = (e) => {
-      // Hidden Admin Shortcut: Ctrl + Alt + A (Only works for the admin email)
-      if (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'a') {
-        const adminEmail = import.meta.env.VITE_ADMIN_EMAIL;
-        if (user && adminEmail && user.username.toLowerCase() === adminEmail.toLowerCase()) {
-          setShowAdmin(prev => !prev);
-        }
-      }
-
       if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      if (e.key === 'Escape' && fullScreenVideoId) {
+      if (e.key === 'Escape') {
         setFullScreenVideoId(null);
+        setShowExport(false);
+        setIsThemeModalOpen(false);
+        setShowPrivacy(false);
+        setShowChangelog(false);
+        setShowProfile(false);
+        setShowAdmin(false);
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [fullScreenVideoId]);
+  }, []);
 
   const handleCreateClient = useCallback(({ name, total, defaultPrice }) => {
     const newClient = {
@@ -450,6 +448,11 @@ function AppContent() {
 
         {/* Toggle Theme / Settings Button */}
         <div style={{ position: 'fixed', top: '1.5rem', right: '1.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center', zIndex: 50 }}>
+          {user && import.meta.env.VITE_ADMIN_EMAIL && user.username.toLowerCase() === import.meta.env.VITE_ADMIN_EMAIL.toLowerCase() && (
+            <button className="sidebar-footer-btn" onClick={() => setShowAdmin(true)} style={{ border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem', cursor: 'pointer' }}>
+              Admin Panel
+            </button>
+          )}
           <button className="sidebar-footer-btn" onClick={logout} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem', cursor: 'pointer' }}>
             {t('logout_btn')}
           </button>
@@ -501,6 +504,7 @@ function AppContent() {
           onPrivacyClick={() => setShowPrivacy(true)}
           onChangelogClick={() => setShowChangelog(true)}
           onProfileClick={() => setShowProfile(true)}
+          onAdminClick={() => setShowAdmin(true)}
           isMobileOpen={sidebarOpen}
           onCloseMobile={() => setSidebarOpen(false)}
           collapsed={sidebarCollapsed}
