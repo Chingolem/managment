@@ -80,9 +80,10 @@ function AppContent() {
   useEffect(() => { // eslint-disable-line react-hooks/set-state-in-effect
     if (user && !previousUser) {
       setIsAuthLoading(true);
+      // Safety timeout to dismiss loading shimmer if network hangs
       const timer = setTimeout(() => {
         setIsAuthLoading(false);
-      }, 1500);
+      }, 3500);
       return () => clearTimeout(timer);
     }
     setPreviousUser(user);
@@ -203,6 +204,8 @@ function AppContent() {
         }
       } catch (err) {
         console.error('Supabase load error:', err);
+      } finally {
+        setIsAuthLoading(false);
       }
     };
     
