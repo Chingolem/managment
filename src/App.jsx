@@ -226,6 +226,9 @@ function AppContent() {
 
   // Sync state to URL
   useEffect(() => {
+    if (window.location.hash.includes('access_token=') || window.location.hash.includes('error=')) {
+      return;
+    }
     if (!activeClient && workspaceClients.length === 0) {
       window.history.replaceState(null, '', '/');
       return;
