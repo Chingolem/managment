@@ -340,7 +340,7 @@ function AppContent() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `EditFlow_Backup_${user?.username || 'user'}_${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `TIMEROI_Backup_${user?.username || 'user'}_${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
     success(t('dataExported'));

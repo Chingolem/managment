@@ -907,10 +907,10 @@ export default function AuthScreen({ theme, setTheme }) {
             fontWeight: 'bold',
             fontSize: '1.2rem'
           }}>
-            E
+            T
           </div>
           <span style={{ fontSize: '1.3rem', fontWeight: '900', letterSpacing: '-0.5px', color: 'var(--text-primary)' }}>
-            EditFlow <span style={{ color: 'var(--accent-primary)' }}>PRO</span>
+            TIMEROI <span style={{ color: 'var(--accent-primary)' }}>PRO</span>
           </span>
         </div>
 
@@ -1049,7 +1049,7 @@ export default function AuthScreen({ theme, setTheme }) {
                 <h2 className="auth-modal-title">
                   {modalTab === 'register' ? 'Join the' : 'Welcome back to the'}
                   <br />
-                  <span style={{ color: '#60a5fa' }}>EditFlow</span> workflow.
+                  <span style={{ color: '#60a5fa' }}>TIMEROI</span> workflow.
                 </h2>
                 <p className="auth-modal-desc">
                   {modalTab === 'register'
@@ -1130,10 +1130,10 @@ export default function AuthScreen({ theme, setTheme }) {
                     fontWeight: 'bold',
                     fontSize: '1rem'
                   }}>
-                    E
+                    T
                   </div>
                   <span style={{ fontSize: '1.1rem', fontWeight: '850', letterSpacing: '-0.5px', color: 'var(--text-primary)' }}>
-                    EditFlow <span style={{ color: 'var(--accent-primary)' }}>PRO</span>
+                    TIMEROI <span style={{ color: 'var(--accent-primary)' }}>PRO</span>
                   </span>
                 </div>
               </div>
@@ -1295,7 +1295,7 @@ export default function AuthScreen({ theme, setTheme }) {
                 {modalTab === 'register' ? (
                   <>Already have an account? <button style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontWeight: '700', cursor: 'pointer', fontSize: '0.82rem', fontFamily: 'inherit' }} onClick={() => switchModalTab('signin')}>Sign in</button></>
                 ) : (
-                  <>New to EditFlow? <button style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontWeight: '700', cursor: 'pointer', fontSize: '0.82rem', fontFamily: 'inherit' }} onClick={() => switchModalTab('register')}>Create an account</button></>
+                  <>New to TIMEROI? <button style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', fontWeight: '700', cursor: 'pointer', fontSize: '0.82rem', fontFamily: 'inherit' }} onClick={() => switchModalTab('register')}>Create an account</button></>
                 )}
               </p>
             </div>
