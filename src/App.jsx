@@ -92,10 +92,10 @@ function AppContent() {
 
   useEffect(() => {
     if (user && !isAuthLoading) {
-      const hasShown = sessionStorage.getItem('timeroi_welcome_shown');
+      const hasShown = sessionStorage.getItem('welcome_shown');
       if (!hasShown) {
         setShowWelcome(true);
-        sessionStorage.setItem('timeroi_welcome_shown', '1');
+        sessionStorage.setItem('welcome_shown', '1');
         const timer = setTimeout(() => {
           setShowWelcome(false);
         }, 3200);
@@ -945,5 +945,9 @@ const welcomeStyles = {
     color: '#a1a1aa',
     marginTop: '0.75rem',
     fontWeight: 500,
+  },
+  hidden: {
+    opacity: 0,
+    pointerEvents: 'none'
   }
 };

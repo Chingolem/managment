@@ -46,7 +46,7 @@ export default function PomodoroTimer({ onClose }) {
   const [running, setRunning] = useState(false);
   const [sessions, setSessions] = useState(0);
   const [notifOk, setNotifOk] = useState(typeof Notification !== 'undefined' && Notification.permission === 'granted');
-  const [soundOn, setSoundOn] = useState(() => localStorage.getItem('timeroi_pomodoro_sound') !== 'false');
+  const [soundOn, setSoundOn] = useState(() => localStorage.getItem('pomodoro_sound') !== 'false');
   const [customMins, setCustomMins] = useState({ focus: 25, shortBreak: 5, longBreak: 15 });
   const [expanded, setExpanded] = useState(false);
   const [position, setPosition] = useState({ x: 24, y: window.innerHeight - 620 > 24 ? window.innerHeight - 620 : 24 });
@@ -296,7 +296,7 @@ export default function PomodoroTimer({ onClose }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
             <button onClick={() => setSoundOn(p => {
               const next = !p;
-              localStorage.setItem('timeroi_pomodoro_sound', String(next));
+              localStorage.setItem('pomodoro_sound', String(next));
               return next;
             })} title={soundOn ? 'Sound alerts on' : 'Mute sound alerts'} style={headerBtnStyle(color)}>
               {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
