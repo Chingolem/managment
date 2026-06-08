@@ -669,7 +669,7 @@ function AppContent() {
           <div style={welcomeStyles.box}>
             <div style={welcomeStyles.title}>TIMEROI</div>
             <div style={welcomeStyles.subtitle}>
-              Welcome back, <span style={{ color: 'var(--accent-primary)', fontWeight: 800 }}>{user?.username || 'Creator'}</span>
+              Welcome back
             </div>
           </div>
         </div>
