@@ -7,7 +7,6 @@ import { useLanguage } from './hooks/useLanguage.jsx';
 import { useAuth, WORKSPACE_CONFIGS, getTimerKeys } from './hooks/useAuth.jsx';
 import { useActivityLog } from './hooks/useActivityLog.jsx';
 import TutorialOverlay from './components/TutorialOverlay.jsx';
-import OnboardingTour from './components/OnboardingTour.jsx';
 import Sidebar from './components/Sidebar.jsx';
 import SetupForm from './components/SetupForm.jsx';
 import ArchiveSection from './components/ArchiveSection.jsx';
