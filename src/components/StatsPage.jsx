@@ -58,13 +58,6 @@ export default function AdminDashboardPage() {
             </div>
             <div style={{ fontSize: '2.5rem', fontWeight: '900', color: 'var(--success)' }}>{stats.tasks}</div>
           </div>
-
-          <div style={{ background: 'var(--bg-panel)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--border-color)', boxShadow: '0 4px 20px rgba(0,0,0,0.02)' }}>
-            <div style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', textTransform: 'uppercase', fontWeight: 700 }}>
-              <Clock size={16} /> Est. Platform Hours
-            </div>
-            <div style={{ fontSize: '2.5rem', fontWeight: '900', color: 'var(--warning)' }}>{stats.hours}</div>
-          </div>
         </div>
       )}
     </div>
