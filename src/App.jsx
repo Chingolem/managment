@@ -679,16 +679,6 @@ function AppContent() {
       {isThemeModalOpen && <Suspense fallback={null}><ThemeSettingsModal currentTheme={theme} onSave={setTheme} onClose={() => setIsThemeModalOpen(false)} /></Suspense>}
       <ToastContainer />
 
-      {showWelcome && (
-        <div style={welcomeStyles.overlay}>
-          <div style={welcomeStyles.box}>
-            <div style={welcomeStyles.title}>TIMEROI</div>
-            <div style={welcomeStyles.subtitle}>
-              Welcome back
-            </div>
-          </div>
-        </div>
-      )}
 
       {fullVideoObj && (
         <Suspense fallback={null}><VideoOverlay video={fullVideoObj} updateVideo={updateVideoForActiveClient} onClose={() => setFullScreenVideoId(null)} /></Suspense>
