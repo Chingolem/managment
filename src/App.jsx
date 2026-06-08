@@ -230,7 +230,7 @@ function AppContent() {
       window.history.replaceState(null, '', '/');
       return;
     }
-    if (['analytics', 'profile', 'privacy', 'changelog', 'admin'].includes(viewMode)) {
+    if (['analytics', 'profile', 'privacy', 'changelog', 'secure-hq-dashboard'].includes(viewMode)) {
       window.history.replaceState(null, '', `/${viewMode}`);
     } else if (activeClient) {
       const slug = activeClient.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
@@ -242,7 +242,7 @@ function AppContent() {
   useEffect(() => { // eslint-disable-line react-hooks/set-state-in-effect
     if (workspaceClients.length === 0) return;
     const path = window.location.pathname;
-    if (['analytics', 'profile', 'privacy', 'changelog', 'admin'].includes(path.substring(1))) {
+    if (['analytics', 'profile', 'privacy', 'changelog', 'secure-hq-dashboard'].includes(path.substring(1))) {
       setViewMode(path.substring(1));
     } else if (path.startsWith('/project/')) {
       const slug = path.replace('/project/', '');
@@ -460,7 +460,7 @@ function AppContent() {
   const config = WORKSPACE_CONFIGS[user.role || 'video_editor'];
 
   // Setup client workspace screen if new or no clients exist
-  if ((!activeClient || workspaceClients.length === 0 || isAddingClient) && !['profile', 'privacy', 'changelog', 'admin'].includes(viewMode)) {
+  if ((!activeClient || workspaceClients.length === 0 || isAddingClient) && !['profile', 'privacy', 'changelog', 'secure-hq-dashboard'].includes(viewMode)) {
     return (
       <div className="setup-container">
         {isThemeModalOpen && <Suspense fallback={null}><ThemeSettingsModal currentTheme={theme} onSave={setTheme} onClose={() => setIsThemeModalOpen(false)} /></Suspense>}
@@ -529,7 +529,7 @@ function AppContent() {
             <Suspense fallback={null}><PrivacyPage /></Suspense>
           ) : viewMode === 'changelog' ? (
             <Suspense fallback={null}><ChangelogPage /></Suspense>
-          ) : viewMode === 'admin' ? (
+          ) : viewMode === 'secure-hq-dashboard' ? (
             <Suspense fallback={null}><AdminDashboardPage /></Suspense>
           ) : !activeClient ? (
             <div style={{
