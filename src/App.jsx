@@ -1,6 +1,7 @@
 /* eslint-disable no-unused-vars */
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { ClipboardList, BarChart3, Trash2, Plus, Network, Archive, Link } from 'lucide-react';
+import { Analytics as VercelAnalytics } from '@vercel/analytics/react';
 
 import { sanitize } from './hooks/sanitize.js';
 import { useToastContext } from './hooks/useToast.jsx';
@@ -682,5 +683,10 @@ function AppContent() {
 export default App;
 
 function App() {
-  return <AppContent />;
+  return (
+    <>
+      <AppContent />
+      <VercelAnalytics />
+    </>
+  );
 }
