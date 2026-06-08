@@ -234,7 +234,11 @@ function AppContent() {
       window.history.replaceState(null, '', `/${viewMode}`);
     } else if (activeClient) {
       const slug = activeClient.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-      window.history.replaceState(null, '', `/project/${slug}`);
+      if (viewMode === 'canvas') {
+        window.history.replaceState(null, '', `/project/${slug}/canvas`);
+      } else {
+        window.history.replaceState(null, '', `/project/${slug}`);
+      }
     }
   }, [viewMode, activeClient, workspaceClients.length]);
 
@@ -245,11 +249,18 @@ function AppContent() {
     if (['analytics', 'profile', 'privacy', 'changelog', 'stats'].includes(path.substring(1))) {
       setViewMode(path.substring(1));
     } else if (path.startsWith('/project/')) {
-      const slug = path.replace('/project/', '');
+      let isCanvas = false;
+      let slug = path.replace('/project/', '');
+      if (slug.endsWith('/canvas')) {
+        slug = slug.replace('/canvas', '');
+        isCanvas = true;
+      }
       const found = workspaceClients.find(c => c.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase() === slug);
-      if (found && found.id !== activeClientId) {
-        setActiveClientId(found.id);
-        setViewMode('dashboard');
+      if (found) {
+        if (found.id !== activeClientId) {
+          setActiveClientId(found.id);
+        }
+        setViewMode(isCanvas ? 'canvas' : 'dashboard');
       }
     }
   }, [workspaceClients]);

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Play, Pause, CheckCircle, RefreshCcw, GripVertical, Link, Maximize2, Trash2,
-  MousePointer, PenTool, StickyNote, Type, Trash, Check, Film
+  MousePointer, PenTool, StickyNote, Type, Trash, Film, ZoomIn, ZoomOut, RotateCcw
 } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage.jsx';
 import { useAuth, WORKSPACE_CONFIGS, getTimerKeys } from '../hooks/useAuth.jsx';
@@ -18,16 +18,16 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
   const { t } = useLanguage();
   const { user } = useAuth();
   const keys = getTimerKeys(user?.role || 'video_editor');
-  
   const config = WORKSPACE_CONFIGS[user?.role || 'video_editor'];
 
   const containerRef = useRef(null);
-  
+
   // Board states
   const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
-  
+
   // Whiteboard Active Tool: 'pan' | 'pen' | 'sticky' | 'text'
   const [activeTool, setActiveTool] = useState('pan');
   const [penColor, setPenColor] = useState('#3b82f6'); // default blue
@@ -46,7 +46,7 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
   const [isDrawing, setIsDrawing] = useState(false);
   const [currentPath, setCurrentPath] = useState(null);
 
-  // Parse notes and drawings
+  // Parse notes, drawings, connections
   const stickyNotes = client.stickyNotes || [];
   const drawingPaths = client.drawingPaths || [];
   const connections = client.connections || [];
@@ -111,6 +111,34 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
     return list;
   }, [videos, stickyNotes]);
 
+  // Handle Zoom from Controls
+  const handleZoomIn = () => setZoom(prev => Math.min(prev * 1.2, 4));
+  const handleZoomOut = () => setZoom(prev => Math.max(prev / 1.2, 0.25));
+  const handleResetPanZoom = () => {
+    setPan({ x: 0, y: 0 });
+    setZoom(1);
+  };
+
+  // Zoom via wheel (Ctrl + Scroll, or standard scroll with fallback)
+  const handleWheel = (e) => {
+    e.preventDefault();
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const zoomIntensity = 0.08;
+    const scaleFactor = e.deltaY < 0 ? (1 + zoomIntensity) : (1 - zoomIntensity);
+    const newZoom = Math.min(Math.max(zoom * scaleFactor, 0.25), 4);
+
+    // Zoom relative to mouse cursor
+    setPan(prev => ({
+      x: mouseX - (mouseX - prev.x) * (newZoom / zoom),
+      y: mouseY - (mouseY - prev.y) * (newZoom / zoom)
+    }));
+    setZoom(newZoom);
+  };
+
   // Start dragging a connection line
   const handleStartConnectionDrag = (e, id) => {
     e.stopPropagation();
@@ -129,14 +157,14 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
 
   // Global mouse handlers for canvas
   const handleMouseDown = (e) => {
-    // If clicking a button, input, or card element, do not initiate canvas action
+    if (!containerRef.current) return;
     if (e.target.closest('button') || e.target.closest('input') || e.target.closest('textarea') || e.target.closest('select')) {
       return;
     }
 
     const rect = containerRef.current.getBoundingClientRect();
-    const cx = e.clientX - rect.left - pan.x;
-    const cy = e.clientY - rect.top - pan.y;
+    const cx = (e.clientX - rect.left - pan.x) / zoom;
+    const cy = (e.clientY - rect.top - pan.y) / zoom;
 
     if (activeTool === 'pen') {
       setIsDrawing(true);
@@ -149,8 +177,8 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
       const newNote = {
         id: 'note_' + Date.now(),
         type: activeTool,
-        x: cx - 75,
-        y: cy - 75,
+        x: cx - 80,
+        y: cy - 80,
         text: activeTool === 'sticky' ? 'New Sticky Note' : 'Double click to edit text',
         color: activeTool === 'sticky' ? '#fef08a' : 'transparent'
       };
@@ -160,7 +188,7 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
       setActiveTool('pan');
     } else {
       // Pan mode
-      if (e.target.closest('.canvas-card') || e.target.closest('.whiteboard-note') || e.target.closest('.whiteboard-note textarea')) {
+      if (e.target.closest('.canvas-card') || e.target.closest('.whiteboard-note')) {
         return;
       }
       setIsPanning(true);
@@ -169,9 +197,10 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
   };
 
   const handleMouseMove = (e) => {
+    if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const cx = e.clientX - rect.left - pan.x;
-    const cy = e.clientY - rect.top - pan.y;
+    const cx = (e.clientX - rect.left - pan.x) / zoom;
+    const cy = (e.clientY - rect.top - pan.y) / zoom;
 
     if (isDraggingConnection) {
       setConnectionDragCurrent({ x: cx, y: cy });
@@ -190,11 +219,10 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
       const newX = cx - dragOffset.x;
       const newY = cy - dragOffset.y;
 
-      // Truly infinite boundary dragging
       if (typeof activeDragId === 'number') {
         updateVideo(activeDragId, { canvasX: newX, canvasY: newY });
       } else {
-        const updatedNotes = stickyNotes.map(n => 
+        const updatedNotes = stickyNotes.map(n =>
           n.id === activeDragId ? { ...n, x: newX, y: newY } : n
         );
         updateClient(client.id, { stickyNotes: updatedNotes });
@@ -203,13 +231,13 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
   };
 
   const handleMouseUp = (e) => {
+    if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const cx = e.clientX - rect.left - pan.x;
-    const cy = e.clientY - rect.top - pan.y;
+    const cx = (e.clientX - rect.left - pan.x) / zoom;
+    const cy = (e.clientY - rect.top - pan.y) / zoom;
 
     if (isDraggingConnection) {
-      // Find if released inside another node's bounding box
-      const targetNode = allNodes.find(node => 
+      const targetNode = allNodes.find(node =>
         node.id !== linkingFromId &&
         cx >= node.x && cx <= node.x + node.width &&
         cy >= node.y && cy <= node.y + node.height
@@ -241,12 +269,36 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
     }
   };
 
+  // Double click background to drop a note
+  const handleDoubleClick = (e) => {
+    if (e.target.closest('.canvas-card') || e.target.closest('.whiteboard-note') || e.target.closest('button') || e.target.closest('select')) {
+      return;
+    }
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const cx = (e.clientX - rect.left - pan.x) / zoom;
+    const cy = (e.clientY - rect.top - pan.y) / zoom;
+
+    const newNote = {
+      id: 'note_' + Date.now(),
+      type: 'sticky',
+      x: cx - 80,
+      y: cy - 80,
+      text: 'Double click to edit notes',
+      color: '#fef08a'
+    };
+    updateClient(client.id, {
+      stickyNotes: [...stickyNotes, newNote]
+    });
+  };
+
   // Drag handles
   const startDrag = (e, id, currentX, currentY) => {
     e.stopPropagation();
+    if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left - pan.x;
-    const mouseY = e.clientY - rect.top - pan.y;
+    const mouseX = (e.clientX - rect.left - pan.x) / zoom;
+    const mouseY = (e.clientY - rect.top - pan.y) / zoom;
 
     setDragOffset({
       x: mouseX - currentX,
@@ -274,9 +326,9 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
     const vLastStartTime = video[keys.lastStartTime];
     const vTotalSeconds = video[keys.totalSeconds] || 0;
     const diff = vLastStartTime ? Math.floor((Date.now() - vLastStartTime) / 1000) : 0;
-    updateVideo(video.id, { 
-      [keys.status]: 'paused', 
-      [keys.totalSeconds]: vTotalSeconds + diff, 
+    updateVideo(video.id, {
+      [keys.status]: 'paused',
+      [keys.totalSeconds]: vTotalSeconds + diff,
       [keys.lastStartTime]: null,
       [keys.lastStopTime]: Date.now()
     });
@@ -291,9 +343,9 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
     if ((video[keys.status] || 'not_started') === 'started' && vLastStartTime) {
       extra = Math.floor((Date.now() - vLastStartTime) / 1000);
     }
-    updateVideo(video.id, { 
-      [keys.status]: 'finished', 
-      [keys.totalSeconds]: vTotalSeconds + extra, 
+    updateVideo(video.id, {
+      [keys.status]: 'finished',
+      [keys.totalSeconds]: vTotalSeconds + extra,
       [keys.lastStartTime]: null,
       [keys.finishedCount]: vFinishedCount + 1
     });
@@ -321,7 +373,7 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
 
   // Sticky Note handlers
   const handleUpdateNoteText = (id, text) => {
-    const updated = stickyNotes.map(n => 
+    const updated = stickyNotes.map(n =>
       n.id === id ? { ...n, text } : n
     );
     updateClient(client.id, { stickyNotes: updated });
@@ -329,11 +381,10 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
 
   const handleDeleteNote = (id) => {
     const updated = stickyNotes.filter(n => n.id !== id);
-    // Also remove connection links with this note
     const updatedConnections = connections.filter(c => c.from !== id && c.to !== id);
-    updateClient(client.id, { 
+    updateClient(client.id, {
       stickyNotes: updated,
-      connections: updatedConnections 
+      connections: updatedConnections
     });
     if (linkingFromId === id) setLinkingFromId(null);
   };
@@ -344,42 +395,44 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
     }
   };
 
-  // Render SVG connecting lines
+  // Render SVG curved connecting lines (Bezier S-curves)
   const connectionLines = useMemo(() => {
     return connections.map((conn, idx) => {
       const fromNode = allNodes.find(n => n.id === conn.from);
       const toNode = allNodes.find(n => n.id === conn.to);
       if (!fromNode || !toNode) return null;
 
-      // Center calculation based on custom element sizes
       const x1 = fromNode.x + fromNode.width / 2;
       const y1 = fromNode.y + fromNode.height / 2;
       const x2 = toNode.x + toNode.width / 2;
       const y2 = toNode.y + toNode.height / 2;
+
+      // Calculate control points for an organic curved S-line
+      const dx = Math.abs(x2 - x1) * 0.5;
+      const pathData = `M ${x1} ${y1} C ${x1 + dx} ${y1} ${x2 - dx} ${y2} ${x2} ${y2}`;
 
       const midX = (x1 + x2) / 2;
       const midY = (y1 + y2) / 2;
 
       return (
         <g key={idx}>
-          <line 
-            x1={x1} 
-            y1={y1} 
-            x2={x2} 
-            y2={y2} 
-            stroke="var(--accent-primary)" 
-            strokeWidth="3.5" 
+          <path
+            d={pathData}
+            fill="none"
+            stroke="var(--accent-primary)"
+            strokeWidth="3"
             strokeDasharray="5 5"
-            opacity="0.85" 
+            opacity="0.85"
+            style={{ transition: 'all 0.2s' }}
           />
-          <foreignObject 
-            x={midX - 12} 
-            y={midY - 12} 
-            width="24" 
+          <foreignObject
+            x={midX - 12}
+            y={midY - 12}
+            width="24"
             height="24"
             style={{ overflow: 'visible' }}
           >
-            <button 
+            <button
               onClick={() => handleRemoveConnection(idx)}
               style={{
                 width: '22px',
@@ -419,39 +472,41 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
         alignItems: 'center',
         background: 'var(--bg-panel)',
         border: '1px solid var(--border-color)',
-        borderRadius: '12px',
-        padding: '0.5rem 1rem',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.02)'
+        borderRadius: '16px',
+        padding: '0.65rem 1.25rem',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.03)',
+        backdropFilter: 'blur(10px)',
+        zIndex: 5
       }}>
         {/* Whiteboard selection tools */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <button 
+          <button
             className={`btn ${activeTool === 'pan' ? 'btn-primary' : 'btn-outline'}`}
-            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem', borderRadius: '10px' }}
             onClick={() => setActiveTool('pan')}
             title="Pan & Select Tool"
           >
-            <MousePointer size={15} /> Select / Pan
+            <MousePointer size={15} /> Select & Pan
           </button>
-          <button 
+          <button
             className={`btn ${activeTool === 'pen' ? 'btn-primary' : 'btn-outline'}`}
-            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem', borderRadius: '10px' }}
             onClick={() => setActiveTool('pen')}
             title="Draw Freehand Paths"
           >
-            <PenTool size={15} /> Brush Draw
+            <PenTool size={15} /> Free Draw
           </button>
-          <button 
+          <button
             className={`btn ${activeTool === 'sticky' ? 'btn-primary' : 'btn-outline'}`}
-            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem', borderRadius: '10px' }}
             onClick={() => setActiveTool('sticky')}
             title="Add Yellow Sticky Note"
           >
             <StickyNote size={15} /> Sticky Note
           </button>
-          <button 
+          <button
             className={`btn ${activeTool === 'text' ? 'btn-primary' : 'btn-outline'}`}
-            style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+            style={{ padding: '0.5rem 1rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.4rem', borderRadius: '10px' }}
             onClick={() => setActiveTool('text')}
             title="Add Label Text"
           >
@@ -480,15 +535,15 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
                   checklist: [],
                   showOnCanvas: true,
                   videoLength: '',
-                  canvasX: 150 - pan.x,
-                  canvasY: 150 - pan.y
+                  canvasX: (200 - pan.x) / zoom,
+                  canvasY: (200 - pan.y) / zoom
                 };
                 updateClient(client.id, { videos: [...client.videos, newVideoObj] });
               } else if (val) {
                 updateVideo(parseInt(val), {
                   showOnCanvas: true,
-                  canvasX: 150 - pan.x,
-                  canvasY: 150 - pan.y
+                  canvasX: (200 - pan.x) / zoom,
+                  canvasY: (200 - pan.y) / zoom
                 });
               }
             }}
@@ -496,8 +551,8 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
               background: 'var(--bg-surface)',
               border: '1px solid var(--border-color)',
               color: 'var(--text-primary)',
-              padding: '0.4rem 0.6rem',
-              borderRadius: '8px',
+              padding: '0.5rem 0.8rem',
+              borderRadius: '10px',
               fontSize: '0.8rem',
               outline: 'none',
               cursor: 'pointer',
@@ -521,7 +576,7 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
           {activeTool === 'pen' && (
             <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Color:</span>
-              {['#3b82f6', '#ef4444', '#10b981', '#09090b', '#71717a'].map(color => (
+              {['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#71717a'].map(color => (
                 <button
                   key={color}
                   onClick={() => setPenColor(color)}
@@ -540,9 +595,9 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
           )}
 
           {drawingPaths.length > 0 && (
-            <button 
+            <button
               className="btn btn-outline"
-              style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', borderColor: 'var(--danger)', color: 'var(--danger)' }}
+              style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', borderColor: 'var(--danger)', color: 'var(--danger)', borderRadius: '10px' }}
               onClick={handleClearDrawings}
             >
               <Trash2 size={14} /> Clear Drawing
@@ -552,23 +607,28 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
       </div>
 
       {/* ─── CANVAS BOARD AREA ─── */}
-      <div 
+      <div
         ref={containerRef}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
+        onDoubleClick={handleDoubleClick}
+        onWheel={handleWheel}
         style={{
           flex: 1,
           position: 'relative',
           overflow: 'hidden',
           cursor: activeTool === 'pen' ? 'crosshair' : isPanning ? 'grabbing' : 'grab',
           background: 'var(--bg-surface)',
-          backgroundImage: 'radial-gradient(var(--border-color) 1.5px, transparent 1.5px)',
-          backgroundSize: '24px 24px',
-          borderRadius: '16px',
+          // Grid background lines that scale with zoom
+          backgroundImage: `radial-gradient(var(--border-color) 1.5px, transparent 1.5px)`,
+          backgroundSize: `${24 * zoom}px ${24 * zoom}px`,
+          backgroundPosition: `${pan.x}px ${pan.y}px`,
+          borderRadius: '20px',
           border: '1px solid var(--border-color)',
-          userSelect: 'none'
+          userSelect: 'none',
+          boxShadow: 'inset 0 4px 20px rgba(0,0,0,0.015)'
         }}
       >
         {/* Dynamic Help Banner */}
@@ -579,30 +639,61 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
           background: 'var(--bg-panel)',
           border: '1px solid var(--border-color)',
           color: 'var(--text-primary)',
-          padding: '0.5rem 1rem',
-          borderRadius: '8px',
+          padding: '0.55rem 1.1rem',
+          borderRadius: '10px',
           fontSize: '0.8rem',
           zIndex: 10,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+          boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
           display: 'flex',
           alignItems: 'center',
-          gap: '0.5rem'
+          gap: '0.5rem',
+          fontWeight: 650
         }}>
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-primary)' }} />
-          {linkingFromId 
-            ? `Select another item or sticky note node to connect...` 
-            : activeTool === 'pen' 
-            ? 'Drawing Mode: Click and drag anywhere to draw freehand paths.' 
-            : activeTool === 'sticky' 
-            ? 'Sticky Mode: Click on the canvas board to drop a Sticky Note.'
+          {linkingFromId
+            ? `Select another card/note to connect...`
+            : activeTool === 'pen'
+            ? 'Free Draw Mode: Click & drag to sketch.'
+            : activeTool === 'sticky'
+            ? 'Sticky Mode: Click to drop a Sticky Note.'
             : activeTool === 'text'
-            ? 'Text Mode: Click on the canvas board to add a Text Label.'
-            : "Whiteboard Canvas: Drag items to position, drag background to pan infinitely."}
+            ? 'Text Mode: Click to write label text.'
+            : "Whiteboard Canvas: Double-click empty area to create notes."}
         </div>
 
-        {/* Viewport offset translation wrapper */}
+        {/* Floating Zoom & Pan Reset controls (Bottom Right) */}
         <div style={{
-          transform: `translate(${pan.x}px, ${pan.y}px)`,
+          position: 'absolute',
+          bottom: '1rem',
+          right: '1rem',
+          background: 'var(--bg-panel)',
+          border: '1px solid var(--border-color)',
+          borderRadius: '12px',
+          padding: '0.4rem',
+          display: 'flex',
+          gap: '0.35rem',
+          zIndex: 10,
+          boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
+          alignItems: 'center'
+        }}>
+          <button className="sidebar-footer-btn" onClick={handleZoomOut} style={{ padding: '0.4rem', width: '32px', height: '32px', justifyContent: 'center' }} title="Zoom Out">
+            <ZoomOut size={14} />
+          </button>
+          <span style={{ fontSize: '0.75rem', fontWeight: 800, minWidth: '40px', textAlign: 'center', color: 'var(--text-primary)' }}>
+            {Math.round(zoom * 100)}%
+          </span>
+          <button className="sidebar-footer-btn" onClick={handleZoomIn} style={{ padding: '0.4rem', width: '32px', height: '32px', justifyContent: 'center' }} title="Zoom In">
+            <ZoomIn size={14} />
+          </button>
+          <button className="sidebar-footer-btn" onClick={handleResetPanZoom} style={{ padding: '0.4rem', width: '32px', height: '32px', justifyContent: 'center' }} title="Reset Pan & Zoom">
+            <RotateCcw size={14} />
+          </button>
+        </div>
+
+        {/* Viewport translation & zoom wrapper */}
+        <div style={{
+          transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+          transformOrigin: '0 0',
           position: 'absolute',
           top: 0,
           left: 0,
@@ -627,7 +718,7 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
                   d={`M ${path.points.map(p => `${p[0]} ${p[1]}`).join(' L ')}`}
                   fill="none"
                   stroke={path.color}
-                  strokeWidth="3"
+                  strokeWidth="3.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
@@ -639,7 +730,7 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
                   d={`M ${currentPath.points.map(p => `${p[0]} ${p[1]}`).join(' L ')}`}
                   fill="none"
                   stroke={currentPath.color}
-                  strokeWidth="3"
+                  strokeWidth="3.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
@@ -669,7 +760,7 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
             const isLinkingSource = linkingFromId === v.id;
             const vStatus = v[keys.status] || 'not_started';
             const isTimerActive = vStatus === 'started';
-            
+
             return (
               <div
                 key={v.id}
@@ -681,19 +772,19 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
                   width: '240px',
                   background: 'var(--bg-panel)',
                   border: isLinkingSource ? '2px solid var(--accent-primary)' : '1px solid var(--border-color)',
-                  borderRadius: '12px',
-                  padding: '1rem',
+                  borderRadius: '16px',
+                  padding: '1.15rem',
                   pointerEvents: 'auto',
-                  boxShadow: isTimerActive ? '0 10px 25px var(--accent-glow)' : '0 4px 12px rgba(0,0,0,0.03)',
+                  boxShadow: isTimerActive ? '0 12px 35px var(--accent-glow)' : '0 10px 25px rgba(0,0,0,0.03)',
                   transition: activeDragId === v.id ? 'none' : 'border-color 0.2s, box-shadow 0.2s',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '0.75rem',
-                  borderLeft: isTimerActive ? '4.5px solid var(--accent-primary)' : ''
+                  borderTop: isTimerActive ? '4.5px solid var(--accent-primary)' : ''
                 }}
               >
                 {/* Header / drag handle */}
-                <div 
+                <div
                   onMouseDown={(e) => startDrag(e, v.id, v.canvasX, v.canvasY)}
                   style={{
                     display: 'flex',
@@ -706,11 +797,11 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                    <GripVertical size={14} />
+                    <GripVertical size={14} style={{ cursor: 'grab' }} />
                     #{v.id}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <div className={`status-badge ${vStatus}`} style={{ fontSize: '0.7rem', padding: '0.15rem 0.4rem' }}>
+                    <div className={`status-badge ${vStatus}`} style={{ fontSize: '0.7rem', padding: '0.15rem 0.45rem', borderRadius: '6px' }}>
                       {t(config.statusKeys[vStatus] || 'status_not_started')}
                     </div>
                     <button
@@ -735,8 +826,8 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
 
                 {/* Info parameters */}
                 <div style={{ fontSize: '0.85rem' }}>
-                  <div style={{ fontWeight: '750', color: 'var(--text-primary)' }}>Price: ${v.price}</div>
-                  <div style={{ 
+                  <div style={{ fontWeight: '800', color: 'var(--text-primary)' }}>Price: ${v.price}</div>
+                  <div style={{
                     color: 'var(--text-secondary)',
                     fontSize: '0.75rem',
                     whiteSpace: 'nowrap',
@@ -767,8 +858,8 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
                   fontFamily: 'monospace',
                   textAlign: 'center',
                   background: 'var(--bg-surface)',
-                  padding: '0.35rem',
-                  borderRadius: '6px',
+                  padding: '0.45rem',
+                  borderRadius: '10px',
                   border: '1px solid var(--border-color)'
                 }}>
                   {formatTime(
@@ -782,17 +873,17 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
                 <div style={{ display: 'flex', gap: '0.35rem', marginTop: '0.25rem' }}>
                   {isTimerActive ? (
                     <>
-                      <button 
-                        className="btn btn-warning" 
-                        style={{ padding: '0.35rem', fontSize: '0.75rem' }}
+                      <button
+                        className="btn btn-warning"
+                        style={{ padding: '0.4rem', fontSize: '0.75rem', borderRadius: '8px' }}
                         onClick={(e) => handlePauseTimer(e, v)}
                         title="Stop tracking"
                       >
                         <Pause size={12} />
                       </button>
-                      <button 
-                        className="btn btn-success" 
-                        style={{ flex: 1, padding: '0.35rem', fontSize: '0.75rem' }}
+                      <button
+                        className="btn btn-success"
+                        style={{ flex: 1, padding: '0.4rem', fontSize: '0.75rem', borderRadius: '8px' }}
                         onClick={(e) => handleFinishTimer(e, v)}
                         title="Finish tracking"
                       >
@@ -801,17 +892,17 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
                     </>
                   ) : vStatus === 'finished' ? (
                     <>
-                      <button 
-                        className="btn btn-warning" 
-                        style={{ flex: 1, padding: '0.35rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.2rem' }}
+                      <button
+                        className="btn btn-warning"
+                        style={{ flex: 1, padding: '0.4rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.2rem', borderRadius: '8px' }}
                         onClick={(e) => { e.stopPropagation(); updateVideo(v.id, { [keys.status]: 'paused', [keys.lastStartTime]: null }); }}
                         title="Reopen timer"
                       >
                         <RefreshCcw size={12} /> Reopen
                       </button>
-                      <button 
-                        className="btn btn-danger" 
-                        style={{ padding: '0.35rem', fontSize: '0.75rem' }}
+                      <button
+                        className="btn btn-danger"
+                        style={{ padding: '0.4rem', fontSize: '0.75rem', borderRadius: '8px' }}
                         onClick={(e) => handleResetTimer(e, v)}
                         title="Reset timer"
                       >
@@ -820,18 +911,18 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
                     </>
                   ) : (
                     <>
-                      <button 
-                        className="btn btn-primary" 
-                        style={{ flex: 1, padding: '0.35rem', fontSize: '0.75rem' }}
+                      <button
+                        className="btn btn-primary"
+                        style={{ flex: 1, padding: '0.4rem', fontSize: '0.75rem', borderRadius: '8px' }}
                         onClick={(e) => handleStartTimer(e, v)}
                         title="Start tracking"
                       >
                         <Play size={12} /> {t('start')}
                       </button>
                       {vStatus === 'paused' && (
-                        <button 
-                          className="btn btn-danger" 
-                          style={{ padding: '0.35rem', fontSize: '0.75rem' }}
+                        <button
+                          className="btn btn-danger"
+                          style={{ padding: '0.4rem', fontSize: '0.75rem', borderRadius: '8px' }}
                           onClick={(e) => handleResetTimer(e, v)}
                           title="Reset timer"
                         >
@@ -842,18 +933,18 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
                   )}
 
                   {/* Node connection button - click & drag link */}
-                  <button 
+                  <button
                     className={`btn ${isLinkingSource ? 'btn-danger' : 'btn-outline'}`}
-                    style={{ padding: '0.35rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'crosshair' }}
+                    style={{ padding: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'crosshair', borderRadius: '8px' }}
                     onMouseDown={(e) => handleStartConnectionDrag(e, v.id)}
-                    title="Drag line to another card or sticky note to connect"
+                    title="Drag line to another node to connect"
                   >
                     <Link size={12} />
                   </button>
 
-                  <button 
+                  <button
                     className="btn btn-outline"
-                    style={{ padding: '0.35rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    style={{ padding: '0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px' }}
                     onClick={(e) => { e.stopPropagation(); onOpenFull(v.id); }}
                     title="Expand details overlay"
                   >
@@ -879,23 +970,25 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
                   width: '160px',
                   height: '160px',
                   background: isTextType ? 'transparent' : note.color || '#fef08a',
-                  border: isLinkingSource 
-                    ? '2.5px solid var(--accent-primary)' 
-                    : isTextType 
-                    ? '1.5px dashed var(--border-color)' 
+                  border: isLinkingSource
+                    ? '2.5px solid var(--accent-primary)'
+                    : isTextType
+                    ? '1.5px dashed var(--border-color)'
                     : '1px solid rgba(0,0,0,0.06)',
-                  borderRadius: isTextType ? '4px' : '10px',
+                  borderRadius: isTextType ? '6px' : '12px',
                   padding: '0.75rem',
                   pointerEvents: 'auto',
                   display: 'flex',
                   flexDirection: 'column',
                   gap: '0.5rem',
-                  boxShadow: isTextType ? 'none' : '0 10px 15px -3px rgba(0,0,0,0.04)',
-                  transition: activeDragId === note.id ? 'none' : 'border-color 0.2s'
+                  boxShadow: isTextType ? 'none' : '0 10px 25px rgba(0,0,0,0.035)',
+                  transition: activeDragId === note.id ? 'none' : 'border-color 0.2s',
+                  // Visual skew for realism
+                  transform: isTextType ? 'none' : 'rotate(-1deg)'
                 }}
               >
                 {/* Note Header / Drag Anchor */}
-                <div 
+                <div
                   onMouseDown={(e) => startDrag(e, note.id, note.x, note.y)}
                   style={{
                     display: 'flex',
@@ -963,7 +1056,7 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
             <h4 style={{ margin: '0 0 0.5rem', fontWeight: '800', color: 'var(--text-primary)' }}>Your Canvas is Empty</h4>
             <p style={{ fontSize: '0.8rem', margin: 0, opacity: 0.8 }}>
               Use the **+ Add to Canvas** dropdown menu in the toolbar to place task cards here, <br />
-              or select **Brush Draw / Sticky Note** to start whiteboarding!
+              or double-click the empty canvas to drop a Sticky Note!
             </p>
           </div>
         )}
