@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Play, Pause, RotateCcw, Coffee, Brain, Bell, BellOff, Timer, Move, Minimize2 } from 'lucide-react';
+import { X, Play, Pause, RotateCcw, Coffee, Brain, Bell, BellOff, Timer, Move, Minimize2, Volume2, VolumeX } from 'lucide-react';
 
 const MODES = {
   focus: { label: 'Focus', duration: 25 * 60, color: '#ef4444' },
@@ -7,17 +7,30 @@ const MODES = {
   longBreak: { label: 'Long Break', duration: 15 * 60, color: '#3b82f6' },
 };
 
-function beep(freq = 880, ms = 200, ctx) {
+function playChime(ctx) {
   try {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + ms / 1000);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + ms / 1000);
+    const now = ctx.currentTime;
+    
+    // Play a premium C-major arpeggio chime (C5 -> E5 -> G5 -> C6)
+    const playNote = (freq, startOffset, duration) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, now + startOffset);
+      gain.gain.setValueAtTime(0, now + startOffset);
+      gain.gain.linearRampToValueAtTime(0.25, now + startOffset + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + startOffset + duration);
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now + startOffset);
+      osc.stop(now + startOffset + duration);
+    };
+
+    playNote(523.25, 0, 0.4);   // C5
+    playNote(659.25, 0.1, 0.4); // E5
+    playNote(783.99, 0.2, 0.4); // G5
+    playNote(1046.50, 0.3, 0.6); // C6
   } catch {
     // AudioContext may not be available; intentionally ignored.
   }
@@ -33,6 +46,7 @@ export default function PomodoroTimer({ onClose }) {
   const [running, setRunning] = useState(false);
   const [sessions, setSessions] = useState(0);
   const [notifOk, setNotifOk] = useState(typeof Notification !== 'undefined' && Notification.permission === 'granted');
+  const [soundOn, setSoundOn] = useState(() => localStorage.getItem('timeroi_pomodoro_sound') !== 'false');
   const [customMins, setCustomMins] = useState({ focus: 25, shortBreak: 5, longBreak: 15 });
   const [expanded, setExpanded] = useState(false);
   const [position, setPosition] = useState({ x: 24, y: window.innerHeight - 620 > 24 ? window.innerHeight - 620 : 24 });
@@ -43,11 +57,13 @@ export default function PomodoroTimer({ onClose }) {
   const sessionsRef = useRef(sessions);
   const customMinsRef = useRef(customMins);
   const modeRef = useRef(mode);
+  const soundOnRef = useRef(soundOn);
 
   // Keep refs in sync so interval callback always reads fresh values
   useEffect(() => { sessionsRef.current = sessions; }, [sessions]);
   useEffect(() => { customMinsRef.current = customMins; }, [customMins]);
   useEffect(() => { modeRef.current = mode; }, [mode]);
+  useEffect(() => { soundOnRef.current = soundOn; }, [soundOn]);
 
   const getAudioCtx = () => {
     if (!audioCtxRef.current) audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
@@ -69,10 +85,13 @@ export default function PomodoroTimer({ onClose }) {
       }
     }
 
-    const ctx = getAudioCtx();
-    beep(880, 200, ctx);
-    setTimeout(() => beep(1100, 200, ctx), 250);
-    setTimeout(() => beep(1320, 300, ctx), 500);
+    if (soundOnRef.current) {
+      const ctx = getAudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      playChime(ctx);
+    }
   }, [notifOk]);
 
   const effectiveDuration = useCallback((m) => (customMinsRef.current[m] || MODES[m]?.duration / 60 || 25) * 60, []);
@@ -275,6 +294,13 @@ export default function PomodoroTimer({ onClose }) {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+            <button onClick={() => setSoundOn(p => {
+              const next = !p;
+              localStorage.setItem('timeroi_pomodoro_sound', String(next));
+              return next;
+            })} title={soundOn ? 'Sound alerts on' : 'Mute sound alerts'} style={headerBtnStyle(color)}>
+              {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />}
+            </button>
             <button onClick={requestNotif} title={notifOk ? 'Notifications on' : 'Enable notifications'} style={headerBtnStyle(color)}>
               {notifOk ? <Bell size={15} /> : <BellOff size={15} />}
             </button>

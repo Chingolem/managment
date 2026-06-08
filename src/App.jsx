@@ -811,7 +811,11 @@ function AppContent() {
 
               {viewMode === 'analytics' ? (
                 <Suspense fallback={<div className="content-area"><p style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-secondary)' }}>{t('loading')}</p></div>}>
-                  <Analytics client={activeClient} />
+                  <Analytics 
+                    client={activeClient} 
+                    activeClients={workspaceClients}
+                    archivedClients={workspaceArchivedClients}
+                  />
                 </Suspense>
               ) : viewMode === 'canvas' ? (
                 <div className="content-area">
