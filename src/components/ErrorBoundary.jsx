@@ -25,13 +25,21 @@ export default class ErrorBoundary extends React.Component {
   }
 
   handleReset = () => {
-    this.setState({ hasError: false, error: null });
+    const isChunkError = this.state.error?.message?.toLowerCase().includes('dynamically imported') || 
+                         this.state.error?.name === 'ChunkLoadError';
+    if (isChunkError) {
+      window.location.reload();
+    } else {
+      this.setState({ hasError: false, error: null });
+    }
   };
 
   render() {
     if (this.state.hasError) {
       const lang = localStorage.getItem('editflow_crm_lang') || 'en';
       const strings = MESSAGES[lang] || MESSAGES.en;
+      const isChunkError = this.state.error?.message?.toLowerCase().includes('dynamically imported') || 
+                           this.state.error?.name === 'ChunkLoadError';
 
       return (
         <div style={{
@@ -40,12 +48,14 @@ export default class ErrorBoundary extends React.Component {
           background: 'var(--bg-dark)', color: 'var(--text-primary)'
         }}>
           <AlertTriangle size={48} color="var(--danger)" />
-          <h2>{strings.title}</h2>
+          <h2>{isChunkError ? 'Application Update Available' : strings.title}</h2>
           <p style={{ color: 'var(--text-secondary)', maxWidth: '400px' }}>
-            {this.state.error?.message || strings.defaultMsg}
+            {isChunkError 
+              ? 'We have deployed a new version of TIMEROI. Please refresh the page to load the latest features.' 
+              : (this.state.error?.message || strings.defaultMsg)}
           </p>
           <button className="btn btn-primary" onClick={this.handleReset} style={{ marginTop: '1rem' }}>
-            <RefreshCcw size={16} /> {strings.btn}
+            <RefreshCcw size={16} /> {isChunkError ? 'Refresh Page' : strings.btn}
           </button>
         </div>
       );
