@@ -1014,9 +1014,23 @@ export default function AuthScreen({ theme, setTheme }) {
         borderTop: '1px solid var(--border-color)',
         textAlign: 'center',
         color: 'var(--text-secondary)',
-        fontSize: '0.9rem'
+        fontSize: '0.9rem',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '0.75rem'
       }}>
-        &copy; {new Date().getFullYear()} TIMEROI. Designed for visual project mapping.
+        <div>
+          &copy; {new Date().getFullYear()} TIMEROI. Designed for visual project mapping.
+        </div>
+        <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.85rem' }}>
+          <a 
+            href="/privacy" 
+            style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 650 }}
+          >
+            Privacy Policy & Legal Terms
+          </a>
+        </div>
       </footer>
 
       {/* ─── SPLIT-SCREEN LOGIN / REGISTER MODAL ─── */}

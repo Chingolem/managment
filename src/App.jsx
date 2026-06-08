@@ -387,8 +387,25 @@ function AppContent() {
 
   const localeStr = language === 'ka' ? 'ka-GE' : 'en-US';
 
-  // If not authenticated, show AuthScreen
+  // If not authenticated, show AuthScreen or public pages (e.g. Privacy policy)
   if (!user) {
+    const path = window.location.pathname;
+    if (path === '/privacy') {
+      return (
+        <div style={{
+          minHeight: '100vh',
+          background: theme['--bg-dark'] || '#09090b',
+          color: theme['--text-primary'] || '#fafafa',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          padding: '2rem'
+        }}>
+          <ToastContainer />
+          <Suspense fallback={null}>
+            <PrivacyPage />
+          </Suspense>
+        </div>
+      );
+    }
     return (
       <>
         <ToastContainer />
