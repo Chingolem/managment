@@ -726,7 +726,7 @@ function AppContent() {
             <Suspense fallback={null}><ChangelogPage /></Suspense>
           ) : viewMode === 'stats' ? (
             <Suspense fallback={null}><StatsPage /></Suspense>
-          ) : (isAddingClient || workspaceClients.length === 0) ? (
+          ) : isAddingClient ? (
             <div className="content-area" style={{ overflowY: 'auto', maxHeight: '100%', padding: '2.5rem 2rem' }}>
               <div className="setup-header" style={{ textAlign: 'center', marginBottom: '2rem' }}>
                 <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '0.05em', color: 'var(--text-primary)', margin: 0 }}>TIMEROI</h1>
