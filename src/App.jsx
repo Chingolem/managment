@@ -66,7 +66,12 @@ function AppContent() {
     return clients.filter(c => (c.role || 'video_editor') === (user?.role || 'video_editor'));
   }, [clients, user?.role]);
 
-  const activeClient = useMemo(() => workspaceClients.find(c => c.id === activeClientId), [workspaceClients, activeClientId]);
+  const activeClient = useMemo(() => {
+    if (!activeClientId && workspaceClients.length > 0) {
+      return workspaceClients[0];
+    }
+    return workspaceClients.find(c => c.id === activeClientId);
+  }, [workspaceClients, activeClientId]);
 
   const workspaceArchivedClients = useMemo(() => {
     return archivedClients.filter(c => (c.role || 'video_editor') === (user?.role || 'video_editor'));
@@ -74,6 +79,7 @@ function AppContent() {
 
   useEffect(() => { // eslint-disable-line react-hooks/set-state-in-effect
     if (user && !previousUser) {
+      setIsAuthLoading(true);
       const timer = setTimeout(() => {
         setIsAuthLoading(false);
       }, 1500);
@@ -90,7 +96,7 @@ function AppContent() {
         sessionStorage.setItem('timeroi_welcome_shown', '1');
         const timer = setTimeout(() => {
           setShowWelcome(false);
-        }, 2200);
+        }, 3200);
         return () => clearTimeout(timer);
       }
     }
@@ -921,7 +927,7 @@ const welcomeStyles = {
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 100000,
-    animation: 'welcomeFadeOut 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+    animation: 'welcomeFadeOut 3.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
   },
   box: {
     textAlign: 'center',
