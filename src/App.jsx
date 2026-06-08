@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars */
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import { ClipboardList, BarChart3, Trash2, Plus, Network, Archive } from 'lucide-react';
+import { ClipboardList, BarChart3, Trash2, Plus, Network, Archive, Link } from 'lucide-react';
 
 import { sanitize } from './hooks/sanitize.js';
 import { useToastContext } from './hooks/useToast.jsx';
@@ -225,6 +225,36 @@ function AppContent() {
       setActiveClientId(null);
     }
   }, [workspaceClients, activeClientId, setActiveClientId]);
+
+  // Sync state to URL
+  useEffect(() => {
+    if (!activeClient && workspaceClients.length === 0) {
+      window.history.replaceState(null, '', '/');
+      return;
+    }
+    if (viewMode === 'analytics') {
+      window.history.replaceState(null, '', '/analytics');
+    } else if (activeClient) {
+      const slug = activeClient.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
+      window.history.replaceState(null, '', `/project/${slug}`);
+    }
+  }, [viewMode, activeClient, workspaceClients.length]);
+
+  // Initial load from URL
+  useEffect(() => { // eslint-disable-line react-hooks/set-state-in-effect
+    if (workspaceClients.length === 0) return;
+    const path = window.location.pathname;
+    if (path === '/analytics') {
+      setViewMode('analytics');
+    } else if (path.startsWith('/project/')) {
+      const slug = path.replace('/project/', '');
+      const found = workspaceClients.find(c => c.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase() === slug);
+      if (found && found.id !== activeClientId) {
+        setActiveClientId(found.id);
+        setViewMode('dashboard');
+      }
+    }
+  }, [workspaceClients]);
 
   // Handle Escape key closure of modal
   useEffect(() => {
@@ -541,7 +571,20 @@ function AppContent() {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
                   </button>
                   <div>
-                    <h1>{activeClient.name}</h1>
+                    <h1 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      {activeClient.name}
+                      <button 
+                        onClick={() => {
+                          navigator.clipboard.writeText(window.location.href);
+                          success('Link copied to clipboard!');
+                        }}
+                        title="Copy Project Link"
+                        className="icon-btn"
+                        style={{ padding: '0.25rem' }}
+                      >
+                        <Link size={16} />
+                      </button>
+                    </h1>
                     <p>
                       {activeClient.videos.length} {t(config.pluralKey)} • {t('createdOn')} {new Date(activeClient.createdAt).toLocaleDateString(localeStr)}
                     </p>
