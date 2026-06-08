@@ -60,6 +60,7 @@ function AppContent() {
   const [isAuthLoading, setIsAuthLoading] = useState(() => !!user);
   const [showPomodoro, setShowPomodoro]   = useState(false);
   const [showExport,   setShowExport]     = useState(false);
+  const [showWelcome,  setShowWelcome]    = useState(false);
 
   const workspaceClients = useMemo(() => {
     return clients.filter(c => (c.role || 'video_editor') === (user?.role || 'video_editor'));
@@ -80,6 +81,20 @@ function AppContent() {
     }
     setPreviousUser(user);
   }, [user, previousUser]);
+
+  useEffect(() => {
+    if (user && !isAuthLoading) {
+      const hasShown = sessionStorage.getItem('timeroi_welcome_shown');
+      if (!hasShown) {
+        setShowWelcome(true);
+        sessionStorage.setItem('timeroi_welcome_shown', '1');
+        const timer = setTimeout(() => {
+          setShowWelcome(false);
+        }, 2200);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [user, isAuthLoading]);
 
   // Clear state when user logs out
   useEffect(() => {
@@ -649,6 +664,17 @@ function AppContent() {
       {isThemeModalOpen && <Suspense fallback={null}><ThemeSettingsModal currentTheme={theme} onSave={setTheme} onClose={() => setIsThemeModalOpen(false)} /></Suspense>}
       <ToastContainer />
 
+      {showWelcome && (
+        <div style={welcomeStyles.overlay}>
+          <div style={welcomeStyles.box}>
+            <div style={welcomeStyles.title}>TIMEROI</div>
+            <div style={welcomeStyles.subtitle}>
+              Welcome back, <span style={{ color: 'var(--accent-primary)', fontWeight: 800 }}>{user?.username || 'Creator'}</span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {fullVideoObj && (
         <Suspense fallback={null}><VideoOverlay video={fullVideoObj} updateVideo={updateVideoForActiveClient} onClose={() => setFullScreenVideoId(null)} /></Suspense>
       )}
@@ -858,3 +884,37 @@ function App() {
     </>
   );
 }
+
+const welcomeStyles = {
+  overlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(9, 9, 11, 0.85)',
+    backdropFilter: 'blur(24px)',
+    WebkitBackdropFilter: 'blur(24px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 100000,
+    animation: 'welcomeFadeOut 2.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
+  },
+  box: {
+    textAlign: 'center',
+    animation: 'welcomePop 0.8s cubic-bezier(0.16, 1, 0.3, 1) both',
+  },
+  title: {
+    fontSize: '3.5rem',
+    fontWeight: 900,
+    letterSpacing: '0.15em',
+    color: '#ffffff',
+    textShadow: '0 0 30px rgba(255,255,255,0.15)',
+    margin: 0,
+    textTransform: 'uppercase',
+  },
+  subtitle: {
+    fontSize: '1.1rem',
+    color: '#a1a1aa',
+    marginTop: '0.75rem',
+    fontWeight: 500,
+  }
+};
