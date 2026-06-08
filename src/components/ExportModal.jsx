@@ -147,7 +147,7 @@ export default function ExportModal({ client, onClose }) {
         </table>
 
         <div style="margin-top:40px;padding-top:16px;border-top:1px solid #e4e4e7;font-size:11px;color:#71717a;text-align:center">
-          Exported from EditFlow PRO · ${new Date().toISOString().split('T')[0]}
+          Exported from TIMEROI · ${new Date().toISOString().split('T')[0]}
         </div>
       </body></html>
     `;

@@ -1016,7 +1016,7 @@ export default function AuthScreen({ theme, setTheme }) {
         color: 'var(--text-secondary)',
         fontSize: '0.9rem'
       }}>
-        &copy; {new Date().getFullYear()} EditFlow PRO. Designed for visual project mapping.
+        &copy; {new Date().getFullYear()} TIMEROI. Designed for visual project mapping.
       </footer>
 
       {/* ─── SPLIT-SCREEN LOGIN / REGISTER MODAL ─── */}

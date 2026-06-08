@@ -3,7 +3,7 @@ import { X, ShieldAlert } from 'lucide-react';
 
 export default function PrivacyModal({ onClose }) {
   return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 9999 }}>
+    <div className="modal-overlay open" onClick={onClose} style={{ zIndex: 9999 }}>
       <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
         <div className="modal-header">
           <h2><ShieldAlert size={20} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '8px', color: 'var(--danger, #ef4444)' }} /> Privacy Policy & Terms</h2>

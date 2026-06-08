@@ -39,7 +39,7 @@ export default function ProfileModal({ onClose }) {
   };
 
   return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 9999 }}>
+    <div className="modal-overlay open" onClick={onClose} style={{ zIndex: 9999 }}>
       <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
         <div className="modal-header">
           <h2><User size={20} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '8px', color: 'var(--accent-primary)' }} /> Profile Settings</h2>

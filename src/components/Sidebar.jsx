@@ -61,7 +61,7 @@ export default function Sidebar({
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             {!collapsed && (
               <div>
-                <div className="sidebar-logo">EditFlow PRO</div>
+                <div className="sidebar-logo">TIMEROI</div>
                 <div className="sidebar-subtitle">Management</div>
               </div>
             )}

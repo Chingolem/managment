@@ -23,7 +23,7 @@ export default function AdminDashboardModal({ onClose }) {
   }, []);
 
   return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 99999 }}>
+    <div className="modal-overlay open" onClick={onClose} style={{ zIndex: 99999 }}>
       <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', background: '#09090b', color: '#fafafa', border: '1px solid #27272a' }}>
         <div className="modal-header" style={{ borderBottom: '1px solid #27272a' }}>
           <h2 style={{ color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

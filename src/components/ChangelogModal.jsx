@@ -36,7 +36,7 @@ const UPDATES = [
 
 export default function ChangelogModal({ onClose }) {
   return (
-    <div className="modal-overlay" onClick={onClose} style={{ zIndex: 9999 }}>
+    <div className="modal-overlay open" onClick={onClose} style={{ zIndex: 9999 }}>
       <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', maxHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
         <div className="modal-header">
           <h2><Sparkles size={20} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '8px', color: 'var(--accent-primary)' }} /> What's New</h2>
