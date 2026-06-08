@@ -40,7 +40,7 @@ function ArchiveDaysItem({ c, t, onRestore, onPermanentDelete }) {
 export default function Sidebar({
   clients, activeClientId, onSelectClient, onAddClick,
   archivedClients, onRestore, onPermanentDelete,
-  onExport, onImport, onThemeClick, onPrivacyClick, onChangelogClick, onProfileClick, onAdminClick, onHomeClick,
+  onExport, onImport, onThemeClick, onPrivacyClick, onChangelogClick, onProfileClick, onStatsClick, onHomeClick,
   isMobileOpen, onCloseMobile,
   collapsed, onToggleCollapse
 }) {
@@ -227,20 +227,17 @@ export default function Sidebar({
                 <Palette size={18} /> {t('changeTheme')}
               </button>
 
-              {user?.username?.toLowerCase() === 'gugleveo@gmail.com' && (
-                <button className="sidebar-footer-btn" onClick={onAdminClick} style={{ color: 'var(--accent-primary)', borderColor: 'var(--accent-primary)' }}>
-                  Admin Dashboard
-                </button>
-              )}
-
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button className="sidebar-footer-btn" onClick={onProfileClick} style={{ flex: 1, justifyContent: 'center', fontSize: '0.75rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                <button className="sidebar-footer-btn" onClick={onProfileClick} style={{ justifyContent: 'center', fontSize: '0.75rem' }}>
                   Profile
                 </button>
-                <button className="sidebar-footer-btn" onClick={onChangelogClick} style={{ flex: 1, justifyContent: 'center', fontSize: '0.75rem' }}>
+                <button className="sidebar-footer-btn" onClick={onStatsClick} style={{ justifyContent: 'center', fontSize: '0.75rem' }}>
+                  Stats
+                </button>
+                <button className="sidebar-footer-btn" onClick={onChangelogClick} style={{ justifyContent: 'center', fontSize: '0.75rem' }}>
                   What's New
                 </button>
-                <button className="sidebar-footer-btn" onClick={onPrivacyClick} style={{ flex: 1, justifyContent: 'center', fontSize: '0.75rem' }}>
+                <button className="sidebar-footer-btn" onClick={onPrivacyClick} style={{ justifyContent: 'center', fontSize: '0.75rem' }}>
                   Privacy
                 </button>
               </div>

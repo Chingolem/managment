@@ -23,7 +23,7 @@ const ExportModal = lazy(() => import('./components/ExportModal.jsx'));
 const ProfilePage = lazy(() => import('./components/ProfilePage.jsx'));
 const PrivacyPage = lazy(() => import('./components/PrivacyPage.jsx'));
 const ChangelogPage = lazy(() => import('./components/ChangelogPage.jsx'));
-const AdminDashboardPage = lazy(() => import('./components/AdminDashboardPage.jsx'));
+const StatsPage = lazy(() => import('./components/StatsPage.jsx'));
 
 const DEFAULT_THEME = {
   '--bg-dark': '#f4f4f5',
@@ -230,7 +230,7 @@ function AppContent() {
       window.history.replaceState(null, '', '/');
       return;
     }
-    if (['analytics', 'profile', 'privacy', 'changelog', 'secure-hq-dashboard'].includes(viewMode)) {
+    if (['analytics', 'profile', 'privacy', 'changelog', 'stats'].includes(viewMode)) {
       window.history.replaceState(null, '', `/${viewMode}`);
     } else if (activeClient) {
       const slug = activeClient.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
@@ -242,7 +242,7 @@ function AppContent() {
   useEffect(() => { // eslint-disable-line react-hooks/set-state-in-effect
     if (workspaceClients.length === 0) return;
     const path = window.location.pathname;
-    if (['analytics', 'profile', 'privacy', 'changelog', 'secure-hq-dashboard'].includes(path.substring(1))) {
+    if (['analytics', 'profile', 'privacy', 'changelog', 'stats'].includes(path.substring(1))) {
       setViewMode(path.substring(1));
     } else if (path.startsWith('/project/')) {
       const slug = path.replace('/project/', '');
@@ -460,7 +460,7 @@ function AppContent() {
   const config = WORKSPACE_CONFIGS[user.role || 'video_editor'];
 
   // Setup client workspace screen if new or no clients exist
-  if ((!activeClient || workspaceClients.length === 0 || isAddingClient) && !['profile', 'privacy', 'changelog', 'secure-hq-dashboard'].includes(viewMode)) {
+  if ((!activeClient || workspaceClients.length === 0 || isAddingClient) && !['profile', 'privacy', 'changelog', 'stats'].includes(viewMode)) {
     return (
       <div className="setup-container">
         {isThemeModalOpen && <Suspense fallback={null}><ThemeSettingsModal currentTheme={theme} onSave={setTheme} onClose={() => setIsThemeModalOpen(false)} /></Suspense>}
@@ -468,11 +468,6 @@ function AppContent() {
 
         {/* Toggle Theme / Settings Button */}
         <div style={{ position: 'fixed', top: '1.5rem', right: '1.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center', zIndex: 50 }}>
-          {user && user.username?.toLowerCase() === 'gugleveo@gmail.com' && (
-            <button className="sidebar-footer-btn" onClick={() => setViewMode('secure-hq-dashboard')} style={{ border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem', cursor: 'pointer' }}>
-              Admin Panel
-            </button>
-          )}
           <button className="sidebar-footer-btn" onClick={logout} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem', cursor: 'pointer' }}>
             {t('logout_btn')}
           </button>
@@ -520,7 +515,7 @@ function AppContent() {
           onPrivacyClick={() => setViewMode('privacy')}
           onChangelogClick={() => setViewMode('changelog')}
           onProfileClick={() => setViewMode('profile')}
-          onAdminClick={() => setViewMode('secure-hq-dashboard')}
+          onStatsClick={() => setViewMode('stats')}
           onHomeClick={() => setViewMode('dashboard')}
           isMobileOpen={sidebarOpen}
           onCloseMobile={() => setSidebarOpen(false)}
@@ -535,8 +530,8 @@ function AppContent() {
             <Suspense fallback={null}><PrivacyPage /></Suspense>
           ) : viewMode === 'changelog' ? (
             <Suspense fallback={null}><ChangelogPage /></Suspense>
-          ) : viewMode === 'secure-hq-dashboard' ? (
-            <Suspense fallback={null}><AdminDashboardPage /></Suspense>
+          ) : viewMode === 'stats' ? (
+            <Suspense fallback={null}><StatsPage /></Suspense>
           ) : !activeClient ? (
             <div style={{
               display: 'flex',
