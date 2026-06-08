@@ -229,7 +229,11 @@ function AppContent() {
     if (window.location.hash.includes('access_token=') || window.location.hash.includes('error=')) {
       return;
     }
-    if (user && (!activeClient || workspaceClients.length === 0 || isAddingClient) && !['profile', 'privacy', 'changelog', 'stats'].includes(viewMode)) {
+    if (['analytics', 'profile', 'privacy', 'changelog', 'stats'].includes(viewMode)) {
+      window.history.replaceState(null, '', `/${viewMode}`);
+      return;
+    }
+    if (user && (!activeClient || workspaceClients.length === 0 || isAddingClient)) {
       window.history.replaceState(null, '', '/setup');
       return;
     }
@@ -237,9 +241,7 @@ function AppContent() {
       window.history.replaceState(null, '', '/');
       return;
     }
-    if (['analytics', 'profile', 'privacy', 'changelog', 'stats'].includes(viewMode)) {
-      window.history.replaceState(null, '', `/${viewMode}`);
-    } else if (activeClient) {
+    if (activeClient) {
       const slug = activeClient.name.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
       if (viewMode === 'canvas') {
         window.history.replaceState(null, '', `/project/${slug}/canvas`);
@@ -379,13 +381,31 @@ function AppContent() {
 
 
   const updateVideoForActiveClient = useCallback((videoId, updates) => {
-    setClients(prev => prev.map(c => {
+    const nextClients = clients.map(c => {
       if (c.id === activeClientId) {
         return { ...c, videos: c.videos.map(v => v.id === videoId ? { ...v, ...updates } : v) };
       }
       return c;
-    }));
-  }, [activeClientId, setClients]);
+    });
+
+    setClients(nextClients);
+
+    // If it's a timer action or status change, sync to Supabase immediately!
+    const isTimerAction = 'status' in updates || 'lastStartTime' in updates || 'totalSeconds' in updates;
+    if (isTimerAction && user) {
+      supabase
+        .from('workspace_data')
+        .upsert({
+          username: user.username,
+          theme,
+          clients: nextClients,
+          active_client_id: activeClientId,
+          archived_clients: archivedClients,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'username' })
+        .catch(err => console.error('Immediate timer sync error:', err));
+    }
+  }, [activeClientId, setClients, clients, user, theme, archivedClients]);
 
   const updateClientInfo = useCallback((clientId, updates) => {
     setClients(prev => prev.map(c => c.id === clientId ? { ...c, ...updates } : c));
