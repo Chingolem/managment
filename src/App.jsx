@@ -440,17 +440,17 @@ function AppContent() {
         <ToastContainer />
 
         {/* Toggle Theme / Settings Button */}
-        <div style={{ position: 'fixed', top: '1.5rem', right: '1.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-          <button className="sidebar-footer-btn" onClick={() => setShowProfile(true)} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem' }}>
+        <div style={{ position: 'fixed', top: '1.5rem', right: '1.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center', zIndex: 50 }}>
+          <button className="sidebar-footer-btn" onClick={() => setShowProfile(true)} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem', cursor: 'pointer' }}>
             Profile Settings
           </button>
-          <button className="sidebar-footer-btn" onClick={() => setShowChangelog(true)} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem' }}>
+          <button className="sidebar-footer-btn" onClick={() => setShowChangelog(true)} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem', cursor: 'pointer' }}>
             What's New
           </button>
-          <button className="sidebar-footer-btn" onClick={() => setShowPrivacy(true)} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem' }}>
+          <button className="sidebar-footer-btn" onClick={() => setShowPrivacy(true)} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem', cursor: 'pointer' }}>
             Privacy
           </button>
-          <button className="sidebar-footer-btn" onClick={logout} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem' }}>
+          <button className="sidebar-footer-btn" onClick={logout} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem', cursor: 'pointer' }}>
             {t('logout_btn')}
           </button>
           <button className="icon-btn" onClick={() => setIsThemeModalOpen(true)} title={t('changeTheme')}>
