@@ -288,10 +288,6 @@ function AppContent() {
       }
       return;
     }
-    if (user && isAddingClient) {
-      window.history.replaceState(null, '', '/setup');
-      return;
-    }
     if (!activeClient && workspaceClients.length === 0) {
       window.history.replaceState(null, '', '/');
       return;
@@ -304,20 +300,17 @@ function AppContent() {
         window.history.replaceState(null, '', `/project/${slug}`);
       }
     }
-  }, [viewMode, activeClient, workspaceClients.length, isAddingClient, user]);
+  }, [viewMode, activeClient, workspaceClients.length, user]);
 
   // Initial load from URL
   useEffect(() => { // eslint-disable-line react-hooks/set-state-in-effect
     const path = window.location.pathname.substring(1);
-    if (path === '') {
+    if (path === '' || path === 'setup') {
       setViewMode('dashboard');
       return;
     }
-    if (['privacy', 'changelog', 'stats', 'setup'].includes(path)) {
+    if (['privacy', 'changelog', 'stats'].includes(path)) {
       setViewMode(path);
-      if (path === 'setup') {
-        setIsAddingClient(true);
-      }
       return;
     }
     if (['analytics', 'profile'].includes(path)) {
@@ -757,11 +750,8 @@ function AppContent() {
               <ClipboardList size={64} style={{ color: 'var(--accent-primary)', opacity: 0.6 }} />
               <h2 style={{ color: 'var(--text-primary)', fontWeight: 800, margin: 0 }}>No Active Projects</h2>
               <p style={{ maxWidth: '400px', margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
-                Create a new project workspace to start tracking tasks, time, assets, checklists, and visual boards.
+                Use the "+" button in the sidebar to create a new project workspace.
               </p>
-              <button className="btn btn-primary" onClick={() => setIsAddingClient(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Plus size={18} /> {t('newProject')}
-              </button>
             </div>
           ) : (
             <>
