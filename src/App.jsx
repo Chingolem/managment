@@ -661,37 +661,7 @@ function AppContent() {
 
   const config = WORKSPACE_CONFIGS[user.role || 'video_editor'];
 
-  // Setup client workspace screen if new or no clients exist
-  if ((!activeClient || workspaceClients.length === 0 || isAddingClient) && !['profile', 'privacy', 'changelog', 'stats'].includes(viewMode)) {
-    return (
-      <div className="setup-screen">
-        {isThemeModalOpen && <Suspense fallback={null}><ThemeSettingsModal currentTheme={theme} onSave={setTheme} onClose={() => setIsThemeModalOpen(false)} /></Suspense>}
-        <ToastContainer />
 
-        {/* Toggle Theme / Settings Button */}
-        <div style={{ position: 'fixed', top: '1.5rem', right: '1.5rem', display: 'flex', gap: '0.5rem', alignItems: 'center', zIndex: 50 }}>
-          <button className="sidebar-footer-btn" onClick={logout} style={{ border: '1px solid var(--border-color)', borderRadius: '10px', background: 'var(--bg-panel)', padding: '0.5rem 1rem', fontSize: '0.8rem', cursor: 'pointer' }}>
-            {t('logout_btn')}
-          </button>
-          <button className="icon-btn" onClick={() => setIsThemeModalOpen(true)} title={t('changeTheme')}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v2m0 14v2m9-9h-2M5 12H3m15.364 6.364l-1.414-1.414M7.05 7.05L5.636 5.636m12.728 0l-1.414 1.414M7.05 16.95l-1.414 1.414" /><circle cx="12" cy="12" r="3" /></svg>
-          </button>
-        </div>
-
-        <div className="setup-header">
-          <h1>TIMEROI</h1>
-          <p>{t('subtitle')}</p>
-        </div>
-        {workspaceClients.length > 0 && (
-          <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
-            <button className="btn btn-outline" onClick={() => setIsAddingClient(false)}>{t('goBack')}</button>
-          </div>
-        )}
-        <SetupForm onCreate={handleCreateClient} />
-        <ArchiveSection archivedClients={workspaceArchivedClients} onRestore={restoreClient} onPermanentDelete={permanentDeleteClient} />
-      </div>
-    );
-  }
 
   return (
     <>
@@ -756,6 +726,22 @@ function AppContent() {
             <Suspense fallback={null}><ChangelogPage /></Suspense>
           ) : viewMode === 'stats' ? (
             <Suspense fallback={null}><StatsPage /></Suspense>
+          ) : (isAddingClient || workspaceClients.length === 0) ? (
+            <div className="content-area" style={{ overflowY: 'auto', maxHeight: '100%', padding: '2.5rem 2rem' }}>
+              <div className="setup-header" style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '0.05em', color: 'var(--text-primary)', margin: 0 }}>TIMEROI</h1>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginTop: '0.5rem' }}>{t('subtitle')}</p>
+              </div>
+              {workspaceClients.length > 0 && (
+                <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                  <button className="btn btn-outline" onClick={() => setIsAddingClient(false)}>{t('goBack')}</button>
+                </div>
+              )}
+              <SetupForm onCreate={handleCreateClient} />
+              <div style={{ marginTop: '3rem' }}>
+                <ArchiveSection archivedClients={workspaceArchivedClients} onRestore={restoreClient} onPermanentDelete={permanentDeleteClient} />
+              </div>
+            </div>
           ) : !activeClient ? (
             <div style={{
               display: 'flex',
