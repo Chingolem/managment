@@ -12,7 +12,6 @@ import ArchiveSection from './components/ArchiveSection.jsx';
 import ToastContainer from './components/Toast.jsx';
 import AuthScreen from './components/AuthScreen.jsx';
 import VideoEditorWorkspace from './components/VideoEditorWorkspace.jsx';
-import CookieConsent from './components/CookieConsent.jsx';
 import { supabase } from './supabaseClient.js';
 
 const Analytics = lazy(() => import('./components/NewAnalytics.jsx'));
@@ -909,7 +908,6 @@ function App() {
   return (
     <>
       <AppContent />
-      <CookieConsent />
     </>
   );
 }
