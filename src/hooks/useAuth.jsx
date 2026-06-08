@@ -121,10 +121,24 @@ export function AuthProvider({ children }) {
     success(t('auth_logged_out') || 'Logged out successfully.');
   }, [success, t]);
 
+  const loginWithDiscord = useCallback(async () => {
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: 'discord',
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+    if (oauthError) {
+      error(oauthError.message);
+      return false;
+    }
+    return true;
+  }, [error]);
+
   if (isInitializing) return null; // Or a loading spinner
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, loginWithDiscord }}>
       {children}
     </AuthContext.Provider>
   );

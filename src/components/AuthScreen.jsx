@@ -774,7 +774,7 @@ function InfoSection() {
 }
 
 export default function AuthScreen({ theme, setTheme }) {
-  const { login, signup } = useAuth();
+  const { login, signup, loginWithDiscord } = useAuth();
   const { t } = useLanguage();
   const { error } = useToastContext();
 
@@ -1242,6 +1242,39 @@ export default function AuthScreen({ theme, setTheme }) {
                   )}
                 </button>
               </form>
+
+              {/* Discord Login Separator & Button */}
+              <div style={{ display: 'flex', alignItems: 'center', margin: '1.25rem 0 1rem 0' }}>
+                <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+                <span style={{ padding: '0 0.75rem', fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>or</span>
+                <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
+              </div>
+
+              <button
+                type="button"
+                onClick={loginWithDiscord}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.55rem',
+                  background: '#5865F2',
+                  color: '#ffffff',
+                  border: 'none',
+                  borderRadius: '10px',
+                  padding: '0.75rem',
+                  fontSize: '0.85rem',
+                  fontWeight: '700',
+                  cursor: 'pointer',
+                  width: '100%',
+                  transition: 'opacity 0.15s ease'
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 127.14 96.36" fill="currentColor">
+                  <path d="M107.7,8.07A105.15,105.15,0,0,0,77.26,0a77.19,77.19,0,0,0-3.3,6.83A96.67,96.67,0,0,0,53.22,6.83,77.19,77.19,0,0,0,49.88,0,105.15,105.15,0,0,0,19.44,8.07C3.66,31.58-1.86,54.65,1,77.53A105.73,105.73,0,0,0,32,96.36a77.7,77.7,0,0,0,6.63-10.85,68.43,68.43,0,0,1-10.45-5c.86-.63,1.72-1.3,2.54-2a74.19,74.19,0,0,0,72.77,0c.82.68,1.68,1.35,2.54,2a68.43,68.43,0,0,1-10.45,5,77.7,77.7,0,0,0,6.63,10.85,105.73,105.73,0,0,0,31-18.83C129.54,50.75,123.3,28,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53S36.18,40.36,42.45,40.36,53.83,46,53.83,53,48.72,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.24,60,73.24,53S78.41,40.36,84.69,40.36,96.07,46,96.07,53,91,65.69,84.69,65.69Z"/>
+                </svg>
+                Continue with Discord
+              </button>
 
               {/* Switch link */}
               <p style={{ textAlign: 'center', fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0.75rem 0 0' }}>
