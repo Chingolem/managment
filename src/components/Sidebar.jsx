@@ -40,7 +40,7 @@ function ArchiveDaysItem({ c, t, onRestore, onPermanentDelete }) {
 export default function Sidebar({
   clients, activeClientId, onSelectClient, onAddClick,
   archivedClients, onRestore, onPermanentDelete,
-  onExport, onImport, onThemeClick, onPrivacyClick, onChangelogClick, onProfileClick, onAdminClick,
+  onExport, onImport, onThemeClick, onPrivacyClick, onChangelogClick, onProfileClick, onAdminClick, onHomeClick,
   isMobileOpen, onCloseMobile,
   collapsed, onToggleCollapse
 }) {
@@ -60,7 +60,7 @@ export default function Sidebar({
         <div className="sidebar-header" style={{ padding: collapsed ? '1rem 0.75rem' : '1.5rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             {!collapsed && (
-              <div>
+              <div onClick={onHomeClick} style={{ cursor: 'pointer' }} title="Go to Dashboard">
                 <div className="sidebar-logo">TIMEROI</div>
                 <div className="sidebar-subtitle">Management</div>
               </div>

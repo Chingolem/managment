@@ -520,7 +520,8 @@ function AppContent() {
           onPrivacyClick={() => setViewMode('privacy')}
           onChangelogClick={() => setViewMode('changelog')}
           onProfileClick={() => setViewMode('profile')}
-          onAdminClick={() => setViewMode('admin')}
+          onAdminClick={() => setViewMode('secure-hq-dashboard')}
+          onHomeClick={() => setViewMode('dashboard')}
           isMobileOpen={sidebarOpen}
           onCloseMobile={() => setSidebarOpen(false)}
           collapsed={sidebarCollapsed}

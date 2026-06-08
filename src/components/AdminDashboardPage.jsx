@@ -23,6 +23,13 @@ export default function AdminDashboardPage() {
 
   return (
     <div style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto', width: '100%', animation: 'fadeIn 0.3s ease-out' }}>
+      <button 
+        onClick={() => window.history.back()} 
+        style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', marginBottom: '1.5rem', fontWeight: 600, fontSize: '0.85rem' }}
+      >
+        &larr; Go Back
+      </button>
+
       <div style={{ marginBottom: '2.5rem' }}>
         <h1 style={{ fontSize: '2.5rem', fontWeight: 900, display: 'flex', alignItems: 'center', gap: '0.75rem', margin: 0 }}>
           <ShieldAlert size={32} style={{ color: 'var(--danger)' }} /> System Administration
