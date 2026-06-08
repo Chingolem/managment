@@ -61,7 +61,7 @@ export function AuthProvider({ children }) {
       if (session?.user) {
         setUser({
           id: session.user.id,
-          username: session.user.email,
+          username: session.user.email ? session.user.email.toLowerCase() : '',
           role: session.user.user_metadata?.role || 'video_editor'
         });
       }
@@ -73,7 +73,7 @@ export function AuthProvider({ children }) {
       if (session?.user) {
         setUser({
           id: session.user.id,
-          username: session.user.email,
+          username: session.user.email ? session.user.email.toLowerCase() : '',
           role: session.user.user_metadata?.role || 'video_editor'
         });
       } else {

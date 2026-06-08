@@ -826,7 +826,16 @@ export default function AuthScreen({ theme, setTheme, onPrivacyClick }) {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return;
-    if (!email.trim() || !password.trim()) return;
+
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password.trim()) return;
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      error(t('auth_invalid_email') || 'Please enter a valid email address.');
+      return;
+    }
 
     setIsSubmitting(true);
 

@@ -288,7 +288,7 @@ function AppContent() {
       }
       return;
     }
-    if (user && (!activeClient || workspaceClients.length === 0 || isAddingClient)) {
+    if (user && isAddingClient) {
       window.history.replaceState(null, '', '/setup');
       return;
     }
