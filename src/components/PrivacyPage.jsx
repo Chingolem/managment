@@ -1,12 +1,14 @@
 import React from 'react';
 import { ShieldAlert, Lock, Cloud, FileText } from 'lucide-react';
 
-export default function PrivacyPage() {
+export default function PrivacyPage({ onClose }) {
   return (
     <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto', width: '100%', animation: 'fadeIn 0.3s ease-out' }}>
       <button 
         onClick={() => {
-          if (document.referrer && document.referrer.includes(window.location.host)) {
+          if (onClose) {
+            onClose();
+          } else if (document.referrer && document.referrer.includes(window.location.host)) {
             window.history.back();
           } else {
             window.location.href = '/';

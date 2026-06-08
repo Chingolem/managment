@@ -773,7 +773,7 @@ function InfoSection() {
   );
 }
 
-export default function AuthScreen({ theme, setTheme }) {
+export default function AuthScreen({ theme, setTheme, onPrivacyClick }) {
   const { login, signup, loginWithDiscord } = useAuth();
   const { t } = useLanguage();
   const { error } = useToastContext();
@@ -1024,12 +1024,15 @@ export default function AuthScreen({ theme, setTheme }) {
           &copy; {new Date().getFullYear()} TIMEROI. Designed for visual project mapping.
         </div>
         <div style={{ display: 'flex', gap: '1.5rem', fontSize: '0.85rem' }}>
-          <a 
-            href="/privacy" 
-            style={{ color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 650 }}
+          <button 
+            onClick={(e) => {
+              e.preventDefault();
+              if (onPrivacyClick) onPrivacyClick();
+            }}
+            style={{ background: 'none', border: 'none', color: 'var(--accent-primary)', textDecoration: 'none', fontWeight: 650, cursor: 'pointer', padding: 0, fontSize: '0.85rem', fontFamily: 'inherit' }}
           >
             Privacy Policy & Legal Terms
-          </a>
+          </button>
         </div>
       </footer>
 

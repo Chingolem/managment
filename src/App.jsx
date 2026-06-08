@@ -247,13 +247,17 @@ function AppContent() {
 
   // Initial load from URL
   useEffect(() => { // eslint-disable-line react-hooks/set-state-in-effect
+    const path = window.location.pathname.substring(1);
+    if (['privacy', 'changelog', 'stats'].includes(path)) {
+      setViewMode(path);
+      return;
+    }
     if (workspaceClients.length === 0) return;
-    const path = window.location.pathname;
-    if (['analytics', 'profile', 'privacy', 'changelog', 'stats'].includes(path.substring(1))) {
-      setViewMode(path.substring(1));
-    } else if (path.startsWith('/project/')) {
+    if (['analytics', 'profile'].includes(path)) {
+      setViewMode(path);
+    } else if (window.location.pathname.startsWith('/project/')) {
       let isCanvas = false;
-      let slug = path.replace('/project/', '');
+      let slug = window.location.pathname.replace('/project/', '');
       if (slug.endsWith('/canvas')) {
         slug = slug.replace('/canvas', '');
         isCanvas = true;
@@ -389,8 +393,7 @@ function AppContent() {
 
   // If not authenticated, show AuthScreen or public pages (e.g. Privacy policy)
   if (!user) {
-    const path = window.location.pathname;
-    if (path === '/privacy') {
+    if (viewMode === 'privacy') {
       return (
         <div style={{
           minHeight: '100vh',
@@ -401,7 +404,7 @@ function AppContent() {
         }}>
           <ToastContainer />
           <Suspense fallback={null}>
-            <PrivacyPage />
+            <PrivacyPage onClose={() => setViewMode('dashboard')} />
           </Suspense>
         </div>
       );
@@ -409,7 +412,7 @@ function AppContent() {
     return (
       <>
         <ToastContainer />
-        <AuthScreen theme={theme} setTheme={setTheme} />
+        <AuthScreen theme={theme} setTheme={setTheme} onPrivacyClick={() => setViewMode('privacy')} />
       </>
     );
   }
