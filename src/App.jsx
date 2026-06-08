@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { ClipboardList, BarChart3, Trash2, Plus, Network, Archive, Link } from 'lucide-react';
 
-import { sanitize } from './hooks/sanitize.js';
+import { sanitize, sanitizeURL } from './hooks/sanitize.js';
 import { useToastContext } from './hooks/useToast.jsx';
 import { useLanguage } from './hooks/useLanguage.jsx';
 import { useAuth, WORKSPACE_CONFIGS, getTimerKeys } from './hooks/useAuth.jsx';
@@ -12,6 +12,7 @@ import ArchiveSection from './components/ArchiveSection.jsx';
 import ToastContainer from './components/Toast.jsx';
 import AuthScreen from './components/AuthScreen.jsx';
 import VideoEditorWorkspace from './components/VideoEditorWorkspace.jsx';
+import CookieConsent from './components/CookieConsent.jsx';
 import { supabase } from './supabaseClient.js';
 
 const Analytics = lazy(() => import('./components/NewAnalytics.jsx'));
@@ -24,6 +25,7 @@ const ProfilePage = lazy(() => import('./components/ProfilePage.jsx'));
 const PrivacyPage = lazy(() => import('./components/PrivacyPage.jsx'));
 const ChangelogPage = lazy(() => import('./components/ChangelogPage.jsx'));
 const StatsPage = lazy(() => import('./components/StatsPage.jsx'));
+const NotFound = lazy(() => import('./components/NotFound.jsx'));
 
 const DEFAULT_THEME = {
   '--bg-dark': '#f4f4f5',
@@ -101,8 +103,10 @@ function AppContent() {
           if (!sessionStorage.getItem(key)) {
             sessionStorage.setItem(key, '1');
             if (Notification.permission === 'granted') {
-              new Notification(`⚠️ Overdue: ${v.note || 'A task'}`, {
-                body: `${c.name} · Due ${v.deadline}`,
+              const safeTitle = sanitize(v.note || 'A task', 128);
+              const safeBody = `${sanitize(c.name, 128)} · Due ${v.deadline}`;
+              new Notification(`⚠️ Overdue: ${safeTitle}`, {
+                body: safeBody,
               });
             }
           }
@@ -229,8 +233,10 @@ function AppContent() {
     if (window.location.hash.includes('access_token=') || window.location.hash.includes('error=')) {
       return;
     }
-    if (['analytics', 'profile', 'privacy', 'changelog', 'stats'].includes(viewMode)) {
-      window.history.replaceState(null, '', `/${viewMode}`);
+    if (['analytics', 'profile', 'privacy', 'changelog', 'stats', 'not_found'].includes(viewMode)) {
+      if (viewMode !== 'not_found') {
+        window.history.replaceState(null, '', `/${viewMode}`);
+      }
       return;
     }
     if (user && (!activeClient || workspaceClients.length === 0 || isAddingClient)) {
@@ -254,6 +260,10 @@ function AppContent() {
   // Initial load from URL
   useEffect(() => { // eslint-disable-line react-hooks/set-state-in-effect
     const path = window.location.pathname.substring(1);
+    if (path === '') {
+      setViewMode('dashboard');
+      return;
+    }
     if (['privacy', 'changelog', 'stats', 'setup'].includes(path)) {
       setViewMode(path);
       if (path === 'setup') {
@@ -261,10 +271,11 @@ function AppContent() {
       }
       return;
     }
-    if (workspaceClients.length === 0) return;
     if (['analytics', 'profile'].includes(path)) {
       setViewMode(path);
-    } else if (window.location.pathname.startsWith('/project/')) {
+      return;
+    }
+    if (window.location.pathname.startsWith('/project/')) {
       let isCanvas = false;
       let slug = window.location.pathname.replace('/project/', '');
       if (slug.endsWith('/canvas')) {
@@ -277,8 +288,14 @@ function AppContent() {
           setActiveClientId(found.id);
         }
         setViewMode(isCanvas ? 'canvas' : 'dashboard');
+      } else {
+        setViewMode('not_found');
       }
+      return;
     }
+
+    // Default fallback for any invalid path
+    setViewMode('not_found');
   }, [workspaceClients]);
 
   // Handle Escape key closure of modal
@@ -365,10 +382,84 @@ function AppContent() {
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = JSON.parse(e.target.result);
-        if (data.clients) setClients(data.clients);
-        if (data.archivedClients) setArchivedClients(data.archivedClients);
-        if (data.theme) setTheme(data.theme);
+        const rawData = JSON.parse(e.target.result);
+        
+        // Define safe parser rules
+        const cleanVideo = (v) => {
+          if (!v || typeof v !== 'object') return null;
+          return {
+            id: typeof v.id === 'number' ? v.id : Date.now(),
+            status: typeof v.status === 'string' ? v.status.slice(0, 50) : 'not_started',
+            totalSeconds: typeof v.totalSeconds === 'number' ? Math.max(0, v.totalSeconds) : 0,
+            lastStartTime: typeof v.lastStartTime === 'number' || v.lastStartTime === null ? v.lastStartTime : null,
+            lastStopTime: typeof v.lastStopTime === 'number' || v.lastStopTime === null ? v.lastStopTime : null,
+            idleGaps: Array.isArray(v.idleGaps) ? v.idleGaps.filter(g => typeof g === 'number' && g >= 0) : [],
+            finishedCount: typeof v.finishedCount === 'number' ? Math.max(0, v.finishedCount) : 0,
+            price: typeof v.price === 'number' ? Math.max(0, v.price) : 0,
+            note: typeof v.note === 'string' ? sanitize(v.note, 1024) : '',
+            noteDetails: typeof v.noteDetails === 'string' ? sanitize(v.noteDetails, 8192) : '',
+            sourceLink: typeof v.sourceLink === 'string' ? sanitizeURL(v.sourceLink) : '',
+            finalLink: typeof v.finalLink === 'string' ? sanitizeURL(v.finalLink) : '',
+            deadline: typeof v.deadline === 'string' ? v.deadline.slice(0, 10) : '',
+            checklist: Array.isArray(v.checklist) ? v.checklist.map(item => {
+              if (typeof item === 'object' && item !== null) {
+                return {
+                  id: typeof item.id === 'string' ? item.id.slice(0, 50) : 'chk_' + Math.random(),
+                  text: typeof item.text === 'string' ? sanitize(item.text, 256) : '',
+                  done: !!item.done
+                };
+              }
+              return null;
+            }).filter(Boolean) : [],
+            showOnCanvas: !!v.showOnCanvas,
+            videoLength: typeof v.videoLength === 'string' ? sanitize(v.videoLength, 50) : ''
+          };
+        };
+
+        const cleanClient = (c) => {
+          if (!c || typeof c !== 'object') return null;
+          const client = {
+            id: typeof c.id === 'string' ? c.id.slice(0, 50) : 'client_' + Date.now(),
+            name: typeof c.name === 'string' ? sanitize(c.name, 64) : 'Unnamed Client',
+            role: typeof c.role === 'string' ? c.role.slice(0, 50) : 'video_editor',
+            createdAt: typeof c.createdAt === 'number' ? c.createdAt : Date.now(),
+            videos: Array.isArray(c.videos) ? c.videos.map(cleanVideo).filter(Boolean) : []
+          };
+          if (typeof c.archivedAt === 'number') {
+            client.archivedAt = c.archivedAt;
+          }
+          return client;
+        };
+
+        const sanitized = { clients: [], archivedClients: [] };
+
+        if (Array.isArray(rawData.clients)) {
+          sanitized.clients = rawData.clients.map(cleanClient).filter(Boolean);
+        }
+        if (Array.isArray(rawData.archivedClients)) {
+          sanitized.archivedClients = rawData.archivedClients.map(cleanClient).filter(Boolean);
+        }
+        
+        setClients(sanitized.clients);
+        setArchivedClients(sanitized.archivedClients);
+
+        if (rawData.theme && typeof rawData.theme === 'object') {
+          const cleanTheme = {};
+          const allowedKeys = [
+            '--bg-dark', '--bg-panel', '--bg-panel-hover', '--bg-surface',
+            '--accent-primary', '--accent-hover', '--accent-glow',
+            '--border-color', '--text-primary', '--text-secondary'
+          ];
+          allowedKeys.forEach(k => {
+            if (typeof rawData.theme[k] === 'string' && /^#[0-9a-fA-F]{3,8}$|^rgba?\([^)]+\)$/.test(rawData.theme[k])) {
+              cleanTheme[k] = rawData.theme[k];
+            }
+          });
+          if (Object.keys(cleanTheme).length > 0) {
+            setTheme(prev => ({ ...prev, ...cleanTheme }));
+          }
+        }
+
         success(t('importSuccess'));
       } catch (err) {
         error(t('importFailed'));
@@ -586,7 +677,18 @@ function AppContent() {
         />
 
         <main className="main-content">
-          {viewMode === 'profile' ? (
+          {viewMode === 'not_found' ? (
+            <Suspense fallback={null}>
+              <NotFound 
+                onGoHome={() => setViewMode('dashboard')} 
+                onCreateProject={() => {
+                  setIsAddingClient(true);
+                  setViewMode('setup');
+                }}
+                showCreateBtn={workspaceClients.length === 0}
+              />
+            </Suspense>
+          ) : viewMode === 'profile' ? (
             <Suspense fallback={null}><ProfilePage /></Suspense>
           ) : viewMode === 'privacy' ? (
             <Suspense fallback={null}><PrivacyPage /></Suspense>
@@ -745,5 +847,10 @@ function AppContent() {
 export default App;
 
 function App() {
-  return <AppContent />;
+  return (
+    <>
+      <AppContent />
+      <CookieConsent />
+    </>
+  );
 }

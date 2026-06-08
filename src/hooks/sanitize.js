@@ -20,3 +20,16 @@ export function sanitizeURL(url) {
   if (/^(javascript|data|vbscript):/i.test(trimmed)) return '';
   return trimmed;
 }
+
+/**
+ * Escape HTML special characters to prevent HTML/XSS injection.
+ */
+export function escapeHTML(str) {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}

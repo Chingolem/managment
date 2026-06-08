@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { X, Download } from 'lucide-react';
 import { useAuth, getTimerKeys } from '../hooks/useAuth.jsx';
+import { escapeHTML, sanitizeURL } from '../hooks/sanitize.js';
 
 function formatTime(seconds) {
   if (!seconds) return '0m';
@@ -76,11 +77,37 @@ export default function ExportModal({ client, onClose }) {
       const vIdleGaps = v[keys.idleGaps] || [];
       const vIdleSeconds = vIdleGaps.reduce((a, g) => a + g, 0);
       const vFinishedCount = v[keys.finishedCount] || 0;
+      
+      const escapedNote = escapeHTML(v.note || 'Untitled');
+      const escapedLength = escapeHTML(v.videoLength || '—');
+      const escapedDeadline = escapeHTML(v.deadline || '—');
+      
+      let linksHtml = '—';
+      if (includeLinks) {
+        const sourceSanitized = v.sourceLink ? sanitizeURL(v.sourceLink) : '';
+        const finalSanitized = v.finalLink ? sanitizeURL(v.finalLink) : '';
+        const sourceA = sourceSanitized ? `<a href="${escapeHTML(sourceSanitized)}" target="_blank" rel="noopener noreferrer" style="color:#3b82f6">Source</a>` : '—';
+        const finalA = finalSanitized ? `<a href="${escapeHTML(finalSanitized)}" target="_blank" rel="noopener noreferrer" style="color:#10b981">Final</a>` : '';
+        linksHtml = `${sourceA}${finalA ? ` | ${finalA}` : ''}`;
+      }
+      
+      let notesHtml = '<td>—</td>';
+      if (includeNotes) {
+        if (v.noteDetails) {
+          const truncated = v.noteDetails.substring(0, 200) + (v.noteDetails.length > 200 ? '…' : '');
+          notesHtml = `<td style="padding:10px 8px;font-size:11px;color:#71717a;white-space:pre-line">${escapeHTML(truncated)}</td>`;
+        } else {
+          notesHtml = '<td>—</td>';
+        }
+      } else {
+        notesHtml = '';
+      }
+
       return `
         <tr style="border-bottom:1px solid #e4e4e7; page-break-inside:avoid">
           <td style="padding:10px 8px;font-weight:700;color:#71717a">${i + 1}</td>
-          <td style="padding:10px 8px;font-weight:700">${v.note || 'Untitled'}</td>
-          <td style="padding:10px 8px;font-family:monospace;font-size:11px">${v.videoLength || '—'}</td>
+          <td style="padding:10px 8px;font-weight:700">${escapedNote}</td>
+          <td style="padding:10px 8px;font-family:monospace;font-size:11px">${escapedLength}</td>
           <td style="padding:10px 8px">
             <span style="background:${statusColor[vStatus] || '#71717a'}22;color:${statusColor[vStatus] || '#71717a'};padding:3px 10px;border-radius:99px;font-size:11px;font-weight:700">
               ${statusLabel[vStatus] || 'Not Started'}
@@ -89,13 +116,9 @@ export default function ExportModal({ client, onClose }) {
           ${includeTime  ? `<td style="padding:10px 8px;font-family:monospace">${formatTime(vTotalSeconds)}</td>` : ''}
           ${includeTime  ? `<td style="padding:10px 8px;font-family:monospace;color:#f59e0b">${formatTime(vIdleSeconds)}</td>` : ''}
           ${includePrice ? `<td style="padding:10px 8px;font-weight:700">$${v.price || 0}</td>` : ''}
-          ${includeLinks ? `
-            <td style="padding:10px 8px;font-size:11px;color:#3b82f6">
-              ${v.sourceLink ? `<a href="${v.sourceLink}" style="color:#3b82f6">Source</a>` : '—'}
-              ${v.finalLink  ? ` | <a href="${v.finalLink}"  style="color:#10b981">Final</a>` : ''}
-            </td>` : ''}
-          ${includeNotes && v.noteDetails ? `<td style="padding:10px 8px;font-size:11px;color:#71717a;white-space:pre-line">${v.noteDetails.substring(0, 200)}${v.noteDetails.length > 200 ? '…' : ''}</td>` : includeNotes ? '<td>—</td>' : ''}
-          <td style="padding:10px 8px;font-size:11px;color:#71717a">${v.deadline || '—'}</td>
+          ${includeLinks ? `<td style="padding:10px 8px;font-size:11px;color:#3b82f6">${linksHtml}</td>` : ''}
+          ${notesHtml}
+          <td style="padding:10px 8px;font-size:11px;color:#71717a">${escapedDeadline}</td>
           <td style="padding:10px 8px;text-align:center">${vFinishedCount}×</td>
         </tr>
       `;
@@ -119,7 +142,7 @@ export default function ExportModal({ client, onClose }) {
       <body>
         <div style="border-left:4px solid #2563eb;padding-left:16px;margin-bottom:24px">
           <div style="font-size:11px;color:#71717a;text-transform:uppercase;letter-spacing:.08em">Project Report</div>
-          <h1 style="font-size:28px;font-weight:800;margin:4px 0">${client.name}</h1>
+          <h1 style="font-size:28px;font-weight:800;margin:4px 0">${escapeHTML(client.name)}</h1>
           <div style="color:#71717a;font-size:13px">Generated ${new Date().toLocaleDateString(undefined, { weekday:'long', year:'numeric', month:'long', day:'numeric' })}</div>
         </div>
 
