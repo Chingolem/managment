@@ -747,6 +747,7 @@ textarea.input-field { resize: vertical; min-height: 120px; }
     z-index: 500;
     transform: translateX(-100%);
     opacity: 0;
+    width: 280px;
   }
   .sidebar.mobile-open {
     transform: translateX(0);
@@ -767,14 +768,254 @@ textarea.input-field { resize: vertical; min-height: 120px; }
     pointer-events: auto;
   }
   .sidebar-toggle-btn { display: flex; }
-  .content-area { padding: 1rem; }
-  .top-bar { padding: 1rem; flex-wrap: wrap; gap: 0.75rem; }
-  .top-bar-actions { flex-wrap: wrap; gap: 0.35rem; }
-  .top-bar-actions .btn { padding: 0.35rem 0.6rem; font-size: 0.75rem; }
+  .content-area { padding: 0.75rem; }
+  .top-bar { padding: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
+  .top-bar-actions { flex-wrap: wrap; gap: 0.25rem; }
+  .top-bar-actions .btn { padding: 0.4rem 0.6rem; font-size: 0.75rem; min-width: 80px; }
+  .top-bar-actions .icon-btn { width: 36px; height: 36px; }
+  .modal-content { padding: 1rem; max-width: 100%; }
+  .expanded-timer { font-size: 2.5rem; }
+  .expanded-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .dashboard-grid { grid-template-columns: 1fr !important; }
+  
+  /* Better touch targets */
+  button, .btn, .icon-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Full width modals on mobile */
+  .modal-overlay {
+    display: flex;
+    align-items: flex-end;
+  }
+  .modal-content {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-area { padding: 0.5rem; }
+  .top-bar { padding: 0.5rem; }
+  .top-bar-actions .btn { padding: 0.35rem 0.5rem; font-size: 0.7rem; min-width: 70px; }
   .top-bar-actions .icon-btn { width: 32px; height: 32px; }
-  .modal-content { padding: 1.5rem; }
-  .expanded-timer { font-size: 3rem; }
-  .expanded-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+  
+  /* Compact layout */
+  .client-card { padding: 0.75rem; }
+  .client-info { gap: 0.5rem; }
+  .client-actions { gap: 0.25rem; }
+  
+  /* Timer */
+  .timer-display { font-size: 2rem; }
+  
+  /* Tables */
+  .video-table { font-size: 0.85rem; }
+  .video-table th, .video-table td { padding: 0.5rem; }
+}
+  .sidebar.mobile-open {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 499;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .sidebar-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .sidebar-toggle-btn { display: flex; }
+  .content-area { padding: 0.75rem; }
+  .top-bar { padding: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
+  .top-bar-actions { flex-wrap: wrap; gap: 0.25rem; }
+  .top-bar-actions .btn { padding: 0.4rem 0.6rem; font-size: 0.75rem; min-width: 80px; }
+  .top-bar-actions .icon-btn { width: 36px; height: 36px; }
+  .modal-content { padding: 1rem; max-width: 100%; }
+  .expanded-timer { font-size: 2.5rem; }
+  .expanded-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .dashboard-grid { grid-template-columns: 1fr !important; }
+  
+  /* Better touch targets */
+  button, .btn, .icon-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Full width modals on mobile */
+  .modal-overlay {
+    display: flex;
+    align-items: flex-end;
+  }
+  .modal-content {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-area { padding: 0.5rem; }
+  .top-bar { padding: 0.5rem; }
+  .top-bar-actions .btn { padding: 0.35rem 0.5rem; font-size: 0.7rem; min-width: 70px; }
+  .top-bar-actions .icon-btn { width: 32px; height: 32px; }
+  
+  /* Compact layout */
+  .client-card { padding: 0.75rem; }
+  .client-info { gap: 0.5rem; }
+  .client-actions { gap: 0.25rem; }
+  
+  /* Timer */
+  .timer-display { font-size: 2rem; }
+  
+  /* Tables */
+  .video-table { font-size: 0.85rem; }
+  .video-table th, .video-table td { padding: 0.5rem; }
+}
+  .sidebar.mobile-open {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 499;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .sidebar-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .sidebar-toggle-btn { display: flex; }
+  .content-area { padding: 0.75rem; }
+  .top-bar { padding: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
+  .top-bar-actions { flex-wrap: wrap; gap: 0.25rem; }
+  .top-bar-actions .btn { padding: 0.4rem 0.6rem; font-size: 0.75rem; min-width: 80px; }
+  .top-bar-actions .icon-btn { width: 36px; height: 36px; }
+  .modal-content { padding: 1rem; max-width: 100%; }
+  .expanded-timer { font-size: 2.5rem; }
+  .expanded-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .dashboard-grid { grid-template-columns: 1fr !important; }
+  
+  /* Better touch targets */
+  button, .btn, .icon-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Full width modals on mobile */
+  .modal-overlay {
+    display: flex;
+    align-items: flex-end;
+  }
+  .modal-content {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-area { padding: 0.5rem; }
+  .top-bar { padding: 0.5rem; }
+  .top-bar-actions .btn { padding: 0.35rem 0.5rem; font-size: 0.7rem; min-width: 70px; }
+  .top-bar-actions .icon-btn { width: 32px; height: 32px; }
+  
+  /* Compact layout */
+  .client-card { padding: 0.75rem; }
+  .client-info { gap: 0.5rem; }
+  .client-actions { gap: 0.25rem; }
+  
+  /* Timer */
+  .timer-display { font-size: 2rem; }
+  
+  /* Tables */
+  .video-table { font-size: 0.85rem; }
+  .video-table th, .video-table td { padding: 0.5rem; }
+}
+  .sidebar.mobile-open {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  .sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 499;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .sidebar-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .sidebar-toggle-btn { display: flex; }
+  .content-area { padding: 0.75rem; }
+  .top-bar { padding: 0.75rem; flex-wrap: wrap; gap: 0.5rem; }
+  .top-bar-actions { flex-wrap: wrap; gap: 0.25rem; }
+  .top-bar-actions .btn { padding: 0.4rem 0.6rem; font-size: 0.75rem; min-width: 80px; }
+  .top-bar-actions .icon-btn { width: 36px; height: 36px; }
+  .modal-content { padding: 1rem; max-width: 100%; }
+  .expanded-timer { font-size: 2.5rem; }
+  .expanded-grid { grid-template-columns: 1fr; gap: 1rem; }
+  .dashboard-grid { grid-template-columns: 1fr !important; }
+  
+  /* Better touch targets */
+  button, .btn, .icon-btn {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Full width modals on mobile */
+  .modal-overlay {
+    display: flex;
+    align-items: flex-end;
+  }
+  .modal-content {
+    width: 100%;
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .content-area { padding: 0.5rem; }
+  .top-bar { padding: 0.5rem; }
+  .top-bar-actions .btn { padding: 0.35rem 0.5rem; font-size: 0.7rem; min-width: 70px; }
+  .top-bar-actions .icon-btn { width: 32px; height: 32px; }
+  
+  /* Compact layout */
+  .client-card { padding: 0.75rem; }
+  .client-info { gap: 0.5rem; }
+  .client-actions { gap: 0.25rem; }
+  
+  /* Timer */
+  .timer-display { font-size: 2rem; }
+  
+  /* Tables */
+  .video-table { font-size: 0.85rem; }
+  .video-table th, .video-table td { padding: 0.5rem; }
 }
 
 /* ─── SCROLLBAR ─── */
