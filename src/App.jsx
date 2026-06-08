@@ -130,6 +130,31 @@ function AppContent() {
     });
   }, [user, clients]);
 
+  // Warn before closing/reloading the tab if a tracking session is active
+  useEffect(() => {
+    if (!user || !clients.length) return;
+    const handleBeforeUnload = (e) => {
+      let isTimerRunning = false;
+      const keys = getTimerKeys(user.role);
+      clients.forEach(c => {
+        c.videos?.forEach(v => {
+          if (v[keys.status] === 'started') {
+            isTimerRunning = true;
+          }
+        });
+      });
+
+      if (isTimerRunning) {
+        e.preventDefault();
+        e.returnValue = 'You have an active tracking session. Are you sure you want to exit?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [user, clients]);
+
   // Load user-specific configurations from Supabase with LocalStorage fallback
   useEffect(() => { // eslint-disable-line react-hooks/set-state-in-effect
     if (!user) return;

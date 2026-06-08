@@ -510,6 +510,7 @@ export default function VideoEditorWorkspace({ client, updateVideo, updateClient
                           value={v.note}
                           onChange={(e) => updateVideo(v.id, { note: e.target.value })}
                           placeholder="Project title..."
+                          aria-label="Project title"
                           style={{
                             background: 'transparent',
                             border: 'none',
@@ -532,6 +533,7 @@ export default function VideoEditorWorkspace({ client, updateVideo, updateClient
                           value={v.videoLength || ''}
                           onChange={(e) => updateVideo(v.id, { videoLength: e.target.value })}
                           placeholder="0:00"
+                          aria-label="Video length"
                           style={{
                             background: 'transparent',
                             border: 'none',
@@ -555,6 +557,7 @@ export default function VideoEditorWorkspace({ client, updateVideo, updateClient
                         <select
                           value={vStatus}
                           onChange={(e) => updateVideo(v.id, { [keys.status]: e.target.value })}
+                          aria-label="Project status"
                           style={{
                             background: 'var(--bg-panel)',
                             border: '1px solid var(--border-color)',
@@ -580,6 +583,7 @@ export default function VideoEditorWorkspace({ client, updateVideo, updateClient
                           type="date"
                           value={v.deadline || ''}
                           onChange={(e) => updateVideo(v.id, { deadline: e.target.value })}
+                          aria-label="Deadline date"
                           style={{
                             background: 'transparent',
                             border: 'none',
