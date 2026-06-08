@@ -49,6 +49,17 @@ export default function VideoEditorWorkspace({ client, updateVideo, updateClient
     return () => clearInterval(interval);
   }, [client.videos, keys]);
 
+  // Dismiss expanded task drawer on Escape
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setExpandedVideoId(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const handleStartTimer = (video) => {
     const vLastStopTime = video[keys.lastStopTime];
     const vIdleGaps = video[keys.idleGaps] || [];

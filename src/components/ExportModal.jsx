@@ -128,7 +128,7 @@ export default function ExportModal({ client, onClose }) {
       <!DOCTYPE html><html lang="en">
       <head>
         <meta charset="UTF-8"/>
-        <title>${client.name} — Project Report</title>
+        <title>${escapeHTML(client.name)} — Project Report</title>
         <style>
           body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 32px; color: #09090b; }
           @media print { @page { margin: 16mm; } }

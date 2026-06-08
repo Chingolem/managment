@@ -87,6 +87,21 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
     return () => clearInterval(interval);
   }, [videos, keys]);
 
+  // Handle escape key to cancel active modes or linking
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setActiveTool('pan');
+        setIsDraggingConnection(false);
+        setLinkingFromId(null);
+        setConnectionDragStart(null);
+        setConnectionDragCurrent(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Unified list of all visual nodes on canvas for connection calculations
   const allNodes = useMemo(() => {
     const list = [];
@@ -676,16 +691,16 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
           boxShadow: '0 10px 25px rgba(0,0,0,0.05)',
           alignItems: 'center'
         }}>
-          <button className="sidebar-footer-btn" onClick={handleZoomOut} style={{ padding: '0.4rem', width: '32px', height: '32px', justifyContent: 'center' }} title="Zoom Out">
+          <button className="sidebar-footer-btn" onClick={handleZoomOut} style={{ padding: '0.4rem', width: '32px', height: '32px', justifyContent: 'center' }} title="Zoom Out" aria-label="Zoom Out">
             <ZoomOut size={14} />
           </button>
           <span style={{ fontSize: '0.75rem', fontWeight: 800, minWidth: '40px', textAlign: 'center', color: 'var(--text-primary)' }}>
             {Math.round(zoom * 100)}%
           </span>
-          <button className="sidebar-footer-btn" onClick={handleZoomIn} style={{ padding: '0.4rem', width: '32px', height: '32px', justifyContent: 'center' }} title="Zoom In">
+          <button className="sidebar-footer-btn" onClick={handleZoomIn} style={{ padding: '0.4rem', width: '32px', height: '32px', justifyContent: 'center' }} title="Zoom In" aria-label="Zoom In">
             <ZoomIn size={14} />
           </button>
-          <button className="sidebar-footer-btn" onClick={handleResetPanZoom} style={{ padding: '0.4rem', width: '32px', height: '32px', justifyContent: 'center' }} title="Reset Pan & Zoom">
+          <button className="sidebar-footer-btn" onClick={handleResetPanZoom} style={{ padding: '0.4rem', width: '32px', height: '32px', justifyContent: 'center' }} title="Reset Pan & Zoom" aria-label="Reset Pan & Zoom">
             <RotateCcw size={14} />
           </button>
         </div>

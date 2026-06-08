@@ -851,6 +851,16 @@ export default function AuthScreen({ theme, setTheme, onPrivacyClick }) {
         setIsSubmitting(false);
         return;
       }
+      if (password.length < 6) {
+        error(t('auth_password_short') || 'Password must be at least 6 characters.');
+        setIsSubmitting(false);
+        return;
+      }
+      if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+        error(t('auth_password_complex') || 'Password must contain at least one letter and one number.');
+        setIsSubmitting(false);
+        return;
+      }
       const isSuccess = await signup(email.trim(), password);
       if (isSuccess) {
         // Automatically login the user after successful registration

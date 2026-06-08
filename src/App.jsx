@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
 import { ClipboardList, BarChart3, Trash2, Plus, Network, Archive, Link } from 'lucide-react';
 
 import { sanitize, sanitizeURL } from './hooks/sanitize.js';
@@ -61,6 +61,7 @@ function AppContent() {
   const [showPomodoro, setShowPomodoro]   = useState(false);
   const [showExport,   setShowExport]     = useState(false);
   const [showWelcome,  setShowWelcome]    = useState(false);
+  const lastSyncErrorTime = useRef(0);
 
   const workspaceClients = useMemo(() => {
     return clients.filter(c => (c.role || 'video_editor') === (user?.role || 'video_editor'));
@@ -184,13 +185,18 @@ function AppContent() {
 
       // Try fetching from Supabase
       try {
-        const { data, error } = await supabase
+        const { data, error: dbError } = await supabase
           .from('workspace_data')
           .select('*')
           .eq('username', user.username)
           .single();
 
-        if (data && !error) {
+        if (dbError) {
+          if (dbError.code !== 'PGRST116') {
+            console.error('Supabase load error:', dbError);
+            error(t('load_error') || 'Failed to load cloud data. Using local cache.');
+          }
+        } else if (data) {
           if (data.theme) setTheme(data.theme);
           if (data.clients) setClients(data.clients);
           if (data.active_client_id) setActiveClientId(data.active_client_id);
@@ -204,6 +210,7 @@ function AppContent() {
         }
       } catch (err) {
         console.error('Supabase load error:', err);
+        error(t('load_error') || 'Failed to load cloud data. Using local cache.');
       } finally {
         setIsAuthLoading(false);
       }
@@ -230,7 +237,7 @@ function AppContent() {
     // Supabase sync (debounced slightly by the timeout to prevent spamming)
     const syncToCloud = async () => {
       try {
-        await supabase
+        const { error: syncError } = await supabase
           .from('workspace_data')
           .upsert({
             username: user.username,
@@ -240,14 +247,26 @@ function AppContent() {
             archived_clients: archivedClients,
             updated_at: new Date().toISOString()
           }, { onConflict: 'username' });
+        
+        if (syncError) {
+          console.error('Supabase sync error:', syncError);
+          if (Date.now() - lastSyncErrorTime.current > 60000) {
+            lastSyncErrorTime.current = Date.now();
+            error(t('sync_error') || 'Cloud sync failed. Working offline.');
+          }
+        }
       } catch (err) {
         console.error('Supabase sync error:', err);
+        if (Date.now() - lastSyncErrorTime.current > 60000) {
+          lastSyncErrorTime.current = Date.now();
+          error(t('sync_error') || 'Cloud sync failed. Working offline.');
+        }
       }
     };
 
     const timeoutId = setTimeout(syncToCloud, 1000);
     return () => clearTimeout(timeoutId);
-  }, [theme, clients, activeClientId, archivedClients, user]);
+  }, [theme, clients, activeClientId, archivedClients, user, error, t]);
 
   // Apply theme variables globally
   useEffect(() => {
@@ -504,7 +523,7 @@ function AppContent() {
 
         success(t('importSuccess'));
       } catch (err) {
-        error(t('importFailed'));
+        error(`${t('importFailed') || 'Import failed'}: ${err.message}`);
       }
     };
     reader.readAsText(file);
