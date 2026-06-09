@@ -43,6 +43,19 @@ function AppContent() {
   const { t, language } = useLanguage();
   const [showPomodoro, setShowPomodoro]   = useState(false);
   const [showExport,   setShowExport]     = useState(false);
+  const [theme, setTheme] = useState(DEFAULT_THEME);
+  const [clients, setClients] = useState([]);
+  const [activeClientId, setActiveClientId] = useState(null);
+  const [archivedClients, setArchivedClients] = useState([]);
+  const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
+  const [isAddingClient, setIsAddingClient] = useState(false);
+  const [fullScreenVideoId, setFullScreenVideoId] = useState(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [viewMode, setViewMode] = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [previousUser, setPreviousUser] = useState(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(() => !!user);
   const lastSyncErrorTime = useRef(0);
 
   // If no user, show SetupForm
@@ -375,6 +388,7 @@ function AppContent() {
     setClients(prev => [...prev, newClient]);
     setActiveClientId(newClient.id);
     setIsAddingClient(false);
+    setViewMode('dashboard');
     success(t('projectCreated'));
   }, [user?.role, setClients, setActiveClientId, success, t]);
 
@@ -713,10 +727,6 @@ function AppContent() {
             <Suspense fallback={null}><StatsPage /></Suspense>
           ) : viewMode === 'setup' || isAddingClient ? (
             <div className="content-area" style={{ overflowY: 'auto', maxHeight: '100%', padding: '2.5rem 2rem' }}>
-              <div className="setup-header" style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '0.05em', color: 'var(--text-primary)', margin: 0 }}>TIMEROI</h1>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '1rem', marginTop: '0.5rem' }}>{t('subtitle')}</p>
-              </div>
               {workspaceClients.length > 0 && (
                 <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
                   <button className="btn btn-outline" onClick={() => setViewMode('dashboard')}>{t('goBack')}</button>
