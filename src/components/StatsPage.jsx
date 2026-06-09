@@ -3,7 +3,7 @@ import { Activity, Users, Clock, Video, ShieldAlert } from 'lucide-react';
 import { supabase } from '../supabaseClient.js';
 
 export default function StatsPage() {
-  const [stats, setStats] = useState({ users: 0, workspaces: 0, tasks: 0, hours: 0 });
+  const [stats, setStats] = useState({ users: 0, workspaces: 0, tasks: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,7 +24,7 @@ export default function StatsPage() {
   return (
     <div style={{ padding: '2rem', maxWidth: '1000px', margin: '0 auto', width: '100%', animation: 'fadeIn 0.3s ease-out' }}>
       <button 
-        onClick={() => window.history.back()} 
+        onClick={() => window.location.href = '/'}} 
         style={{ background: 'transparent', border: '1px solid var(--border-color)', color: 'var(--text-primary)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer', marginBottom: '1.5rem', fontWeight: 600, fontSize: '0.85rem' }}
       >
         &larr; Go Back

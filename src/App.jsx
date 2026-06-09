@@ -334,7 +334,7 @@ function AppContent() {
       setViewMode('dashboard');
       return;
     }
-    if (['privacy', 'changelog', 'stats', 'analytics', 'profile', 'whats_new'].includes(path)) {
+    if (['privacy', 'changelog', 'stats', 'analytics', 'profile'].includes(path)) {
       setViewMode(path);
       return;
     }
@@ -852,13 +852,9 @@ function AppContent() {
                       <Trash2 size={18} />
                     </button>
                   )}
-                  <button className="icon-btn" onClick={() => {
-                    if (['analytics', 'profile', 'privacy', 'changelog', 'stats'].includes(viewMode)) {
-                      window.open('/', '_blank');
-                    } else {
-                      setIsAddingClient(true);
-                    }
-                  }} title={t('newProject')}>
+                   <button className="icon-btn" onClick={() => {
+                     window.open('/', '_blank');
+                   }} title={t('newProject')}>
                     <Plus size={18} />
                   </button>
                 </div>
