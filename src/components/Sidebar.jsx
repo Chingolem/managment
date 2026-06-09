@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, RotateCcw, Trash2, Download, Upload, Palette, X, LogOut, PanelLeftClose, PanelLeft } from 'lucide-react';
+import { Plus, RotateCcw, Trash2, Download, Upload, Palette, LogOut, PanelLeftClose, PanelLeft } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage.jsx';
 import { useAuth, WORKSPACE_CONFIGS } from '../hooks/useAuth.jsx';
 
@@ -40,7 +40,7 @@ function ArchiveDaysItem({ c, t, onRestore, onPermanentDelete }) {
 export default function Sidebar({
   clients, activeClientId, onSelectClient, onAddClick,
   archivedClients, onRestore, onPermanentDelete,
-  onExport, onImport, onThemeClick, onPrivacyClick, onChangelogClick, onProfileClick, onStatsClick, onHomeClick,
+  onExport, onImport, onThemeClick, onPrivacyClick, onProfileClick, onStatsClick, onHomeClick,
   isMobileOpen, onCloseMobile,
   collapsed, onToggleCollapse
 }) {

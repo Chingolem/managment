@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef, lazy, Suspense } from 'react';
-import { ClipboardList, BarChart3, Trash2, Plus, Network, Archive, Link } from 'lucide-react';
+import { ClipboardList, BarChart3, Trash2, Plus, Network, Archive } from 'lucide-react';
 
 import { sanitize, sanitizeURL } from './hooks/sanitize.js';
 import { useToastContext } from './hooks/useToast.jsx';
@@ -10,7 +10,6 @@ import Sidebar from './components/Sidebar.jsx';
 import SetupForm from './components/SetupForm.jsx';
 import ArchiveSection from './components/ArchiveSection.jsx';
 import ToastContainer from './components/Toast.jsx';
-import AuthScreen from './components/AuthScreen.jsx';
 import VideoEditorWorkspace from './components/VideoEditorWorkspace.jsx';
 import { supabase } from './supabaseClient.js';
 
@@ -22,7 +21,6 @@ const PomodoroTimer = lazy(() => import('./components/PomodoroTimer.jsx'));
 const ExportModal = lazy(() => import('./components/ExportModal.jsx'));
 const ProfilePage = lazy(() => import('./components/ProfilePage.jsx'));
 const PrivacyPage = lazy(() => import('./components/PrivacyPage.jsx'));
-const ChangelogPage = lazy(() => import('./components/ChangelogPage.jsx'));
 const StatsPage = lazy(() => import('./components/StatsPage.jsx'));
 const NotFound = lazy(() => import('./components/NotFound.jsx'));
 
@@ -45,7 +43,6 @@ function AppContent() {
   const { t, language } = useLanguage();
   const [showPomodoro, setShowPomodoro]   = useState(false);
   const [showExport,   setShowExport]     = useState(false);
-  const [showWelcome,  setShowWelcome]    = useState(false);
   const lastSyncErrorTime = useRef(0);
 
   // If no user, show SetupForm
@@ -83,19 +80,7 @@ function AppContent() {
     setPreviousUser(user);
   }, [user, previousUser, setIsAuthLoading]);
 
-  useEffect(() => {
-    if (user && !isAuthLoading) {
-      const hasShown = sessionStorage.getItem('welcome_shown');
-      if (!hasShown) {
-        setShowWelcome(true);
-        sessionStorage.setItem('welcome_shown', '1');
-        const timer = setTimeout(() => {
-          setShowWelcome(false);
-        }, 3200);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [user, isAuthLoading]);
+
 
   // Clear state when user logs out
   useEffect(() => {
@@ -294,7 +279,7 @@ function AppContent() {
     if (window.location.hash.includes('access_token=') || window.location.hash.includes('error=')) {
       return;
     }
-    if (['analytics', 'profile', 'privacy', 'changelog', 'stats', 'not_found', 'setup'].includes(viewMode)) {
+    if (['analytics', 'profile', 'privacy', 'stats', 'not_found', 'setup'].includes(viewMode)) {
       if (viewMode !== 'not_found') {
         window.history.replaceState(null, '', `/${viewMode}`);
       }
@@ -325,7 +310,7 @@ function AppContent() {
       setViewMode('setup');
       return;
     }
-    if (['privacy', 'changelog', 'stats', 'analytics', 'profile', 'whats_new'].includes(path)) {
+    if (['privacy', 'stats', 'analytics', 'profile'].includes(path)) {
       setViewMode(path);
       return;
     }
@@ -699,7 +684,7 @@ function AppContent() {
           onImport={handleImport}
           onThemeClick={() => setIsThemeModalOpen(true)}
           onPrivacyClick={() => setViewMode('privacy')}
-          onChangelogClick={() => setViewMode('changelog')}
+
           onProfileClick={() => setViewMode('profile')}
           onStatsClick={() => setViewMode('stats')}
           onHomeClick={() => setViewMode('dashboard')}
@@ -724,8 +709,6 @@ function AppContent() {
             <Suspense fallback={null}><ProfilePage /></Suspense>
           ) : viewMode === 'privacy' ? (
             <Suspense fallback={null}><PrivacyPage /></Suspense>
-          ) : viewMode === 'changelog' ? (
-            <Suspense fallback={null}><ChangelogPage /></Suspense>
           ) : viewMode === 'stats' ? (
             <Suspense fallback={null}><StatsPage /></Suspense>
           ) : viewMode === 'setup' || isAddingClient ? (
@@ -907,40 +890,3 @@ function App() {
   );
 }
 
-const welcomeStyles = {
-  overlay: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(9, 9, 11, 0.85)',
-    backdropFilter: 'blur(24px)',
-    WebkitBackdropFilter: 'blur(24px)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 100000,
-    animation: 'welcomeFadeOut 3.2s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-  },
-  box: {
-    textAlign: 'center',
-    animation: 'welcomePop 0.8s cubic-bezier(0.16, 1, 0.3, 1) both',
-  },
-  title: {
-    fontSize: '3.5rem',
-    fontWeight: 900,
-    letterSpacing: '0.15em',
-    color: '#ffffff',
-    textShadow: '0 0 30px rgba(255,255,255,0.15)',
-    margin: 0,
-    textTransform: 'uppercase',
-  },
-  subtitle: {
-    fontSize: '1.1rem',
-    color: '#a1a1aa',
-    marginTop: '0.75rem',
-    fontWeight: 500,
-  },
-  hidden: {
-    opacity: 0,
-    pointerEvents: 'none'
-  }
-};
