@@ -234,10 +234,7 @@ export default function Sidebar({
                 <button className="sidebar-footer-btn" onClick={onStatsClick} style={{ justifyContent: 'center', fontSize: '0.75rem' }}>
                   Stats
                 </button>
-                <button className="sidebar-footer-btn" onClick={onChangelogClick} style={{ justifyContent: 'center', fontSize: '0.75rem' }}>
-                  What's New
-                </button>
-                <button className="sidebar-footer-btn" onClick={onPrivacyClick} style={{ justifyContent: 'center', fontSize: '0.75rem' }}>
+                <button className="sidebar-footer-btn" onClick={onPrivacyClick} style={{ justifyContent: 'center', fontSize: '0.75rem', gridColumn: 'span 2' }}>
                   Privacy
                 </button>
               </div>

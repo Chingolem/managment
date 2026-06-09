@@ -294,7 +294,7 @@ function AppContent() {
     if (window.location.hash.includes('access_token=') || window.location.hash.includes('error=')) {
       return;
     }
-    if (['analytics', 'profile', 'privacy', 'changelog', 'stats', 'not_found'].includes(viewMode)) {
+    if (['analytics', 'profile', 'privacy', 'changelog', 'stats', 'not_found', 'setup'].includes(viewMode)) {
       if (viewMode !== 'not_found') {
         window.history.replaceState(null, '', `/${viewMode}`);
       }
@@ -317,8 +317,12 @@ function AppContent() {
   // Initial load from URL
   useEffect(() => { // eslint-disable-line react-hooks/set-state-in-effect
     const path = window.location.pathname.substring(1);
-    if (path === '' || path === 'setup') {
+    if (path === '') {
       setViewMode('dashboard');
+      return;
+    }
+    if (path === 'setup') {
+      setViewMode('setup');
       return;
     }
     if (['privacy', 'changelog', 'stats', 'analytics', 'profile', 'whats_new'].includes(path)) {
@@ -687,7 +691,7 @@ function AppContent() {
           clients={workspaceClients}
           activeClientId={activeClientId}
           onSelectClient={setActiveClientId}
-          onAddClick={() => setIsAddingClient(true)}
+          onAddClick={() => setViewMode('setup')}
           archivedClients={workspaceArchivedClients}
           onRestore={restoreClient}
           onPermanentDelete={permanentDeleteClient}
@@ -711,7 +715,6 @@ function AppContent() {
               <NotFound 
                 onGoHome={() => setViewMode('dashboard')} 
                 onCreateProject={() => {
-                  setIsAddingClient(true);
                   setViewMode('setup');
                 }}
                 showCreateBtn={workspaceClients.length === 0}
@@ -725,7 +728,7 @@ function AppContent() {
             <Suspense fallback={null}><ChangelogPage /></Suspense>
           ) : viewMode === 'stats' ? (
             <Suspense fallback={null}><StatsPage /></Suspense>
-          ) : isAddingClient ? (
+          ) : viewMode === 'setup' || isAddingClient ? (
             <div className="content-area" style={{ overflowY: 'auto', maxHeight: '100%', padding: '2.5rem 2rem' }}>
               <div className="setup-header" style={{ textAlign: 'center', marginBottom: '2rem' }}>
                 <h1 style={{ fontSize: '2.5rem', fontWeight: 900, letterSpacing: '0.05em', color: 'var(--text-primary)', margin: 0 }}>TIMEROI</h1>
@@ -733,13 +736,10 @@ function AppContent() {
               </div>
               {workspaceClients.length > 0 && (
                 <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-                  <button className="btn btn-outline" onClick={() => setIsAddingClient(false)}>{t('goBack')}</button>
+                  <button className="btn btn-outline" onClick={() => setViewMode('dashboard')}>{t('goBack')}</button>
                 </div>
               )}
               <SetupForm onCreate={handleCreateClient} />
-              <div style={{ marginTop: '3rem' }}>
-                <ArchiveSection archivedClients={workspaceArchivedClients} onRestore={restoreClient} onPermanentDelete={permanentDeleteClient} />
-              </div>
             </div>
           ) : !activeClient ? (
             <div style={{
