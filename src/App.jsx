@@ -591,20 +591,20 @@ function AppContent() {
         </div>
       );
     }
-  return (
-    <>
-      <TutorialOverlay />
-      {isAuthLoading ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg-dark)', color: 'var(--text-primary)' }}>
-          Loading...
-        </div>
-      ) : user ? (
-        <AppContent />
-      ) : (
-        <SetupForm />
-      )}
-    </>
-  );
+    return (
+      <>
+        <TutorialOverlay />
+        {isAuthLoading ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg-dark)', color: 'var(--text-primary)' }}>
+            Loading...
+          </div>
+        ) : user ? (
+          <AppContent />
+        ) : (
+          <SetupForm />
+        )}
+      </>
+    );
   }
 
   // Facebook-style shimmering loading placeholder
@@ -751,25 +751,6 @@ function AppContent() {
               )}
                <SetupForm onCreate={handleCreateClient} />
              </div>
-            </div>
-          ) : !activeClient ? (
-            <div style={{
-              display: 'flex',
-              flexDirection: 'column',
-              height: '100%',
-              justifyContent: 'center',
-              alignItems: 'center',
-              gap: '1.5rem',
-              color: 'var(--text-secondary)',
-              padding: '4rem 2rem',
-              textAlign: 'center'
-            }}>
-              <ClipboardList size={64} style={{ color: 'var(--accent-primary)', opacity: 0.6 }} />
-              <h2 style={{ color: 'var(--text-primary)', fontWeight: 800, margin: 0 }}>No Active Projects</h2>
-              <p style={{ maxWidth: '400px', margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
-                Use the "+" button in the sidebar to create a new project workspace.
-              </p>
-            </div>
           ) : (
             <>
               <div className="top-bar">
