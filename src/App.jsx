@@ -5,7 +5,7 @@ import { sanitize, sanitizeURL } from './hooks/sanitize.js';
 import { useToastContext } from './hooks/useToast.jsx';
 import { useLanguage } from './hooks/useLanguage.jsx';
 import { useAuth, WORKSPACE_CONFIGS, getTimerKeys } from './hooks/useAuth.jsx';
-import TutorialOverlay from './components/TutorialOverlay.jsx';
+
 import Sidebar from './components/Sidebar.jsx';
 import SetupForm from './components/SetupForm.jsx';
 import ArchiveSection from './components/ArchiveSection.jsx';
@@ -583,13 +583,10 @@ function AppContent() {
     }
   return (
     <>
-      <TutorialOverlay />
       {isAuthLoading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg-dark)', color: 'var(--text-primary)' }}>
           Loading...
         </div>
-      ) : user ? (
-        <AppContent />
       ) : (
         <SetupForm />
       )}
@@ -892,11 +889,6 @@ function AppContent() {
 export default App;
 
 function App() {
-  return (
-    <>
-      <TutorialOverlay />
-      <AppContent />
-    </>
-  );
+  return <AppContent />;
 }
 
