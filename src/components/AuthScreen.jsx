@@ -426,24 +426,24 @@ function PlaygroundsCapabilitiesShowcase() {
       {/* Dynamic keyframe animation styles */}
       <style>{`
         @keyframes showcaseCardEnter {
-          from { opacity: 0; transform: translateY(14px) scale(0.95); }
-          to   { opacity: 1; transform: translateY(0) scale(1); }
+          from { opacity: 0; }
+          to   { opacity: 1; }
         }
         @keyframes showcasePanelEnter {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; }
+          to   { opacity: 1; }
         }
         @keyframes revealFadeUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to   { opacity: 1; transform: translateY(0); }
+          from { opacity: 0; }
+          to   { opacity: 1; }
         }
         @keyframes revealScale {
-          from { opacity: 0; transform: scale(0.92); }
-          to   { opacity: 1; transform: scale(1); }
+          from { opacity: 0; }
+          to   { opacity: 1; }
         }
         @keyframes bulletSlideIn {
-          from { opacity: 0; transform: translateX(-16px); }
-          to   { opacity: 1; transform: translateX(0); }
+          from { opacity: 0; }
+          to   { opacity: 1; }
         }
         @keyframes lineDrawIn {
           from { stroke-dashoffset: 200; }
@@ -461,20 +461,16 @@ function PlaygroundsCapabilitiesShowcase() {
           border: 1.5px solid var(--border-color);
           background: var(--bg-surface);
           color: var(--text-primary);
-          transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-                      background 0.25s ease,
+          transition: background 0.25s ease,
                       color 0.25s ease,
                       border-color 0.25s ease,
                       box-shadow 0.25s ease;
-          will-change: transform;
         }
         .archetype-tab:hover {
-          transform: translateY(-2px);
           box-shadow: 0 6px 18px rgba(0,0,0,0.08);
         }
         .archetype-tab.active {
           color: #ffffff;
-          transform: translateY(-1px);
           box-shadow: 0 8px 22px rgba(0,0,0,0.12);
         }
         .archetype-tab svg { flex-shrink: 0; }
@@ -489,8 +485,7 @@ function PlaygroundsCapabilitiesShowcase() {
         borderBottom: '1px solid var(--border-color)',
         paddingBottom: '1.25rem',
         opacity: sectionVisible ? 1 : 0,
-        transform: sectionVisible ? 'translateY(0)' : 'translateY(24px)',
-        transition: 'opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
+        transition: 'opacity 0.5s ease'
       }}>
         {Object.keys(capabilities).map((key, idx) => {
           const meta = ARCHETYPE_META[key];
@@ -508,8 +503,7 @@ function PlaygroundsCapabilitiesShowcase() {
                 borderColor: isActive ? meta.accent : (hoverTab === key ? meta.accent : 'var(--border-color)'),
                 transitionDelay: sectionVisible ? `${idx * 0.08}s` : '0s',
                 opacity: sectionVisible ? 1 : 0,
-                transform: sectionVisible ? (isActive ? 'translateY(-1px)' : 'translateY(0)') : 'translateY(16px)',
-                transition: 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease'
+                transition: 'opacity 0.4s ease, background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease'
               }}
             >
               <Icon size={16} strokeWidth={2.4} />
@@ -795,7 +789,7 @@ export default function AuthScreen({ theme, setTheme, onPrivacyClick }) {
 
   const toggleTheme = () => {
     if (isDarkMode) {
-      setTheme({
+      const newTheme = {
         '--bg-dark': '#f4f4f5',
         '--bg-panel': '#ffffff',
         '--bg-panel-hover': '#f4f4f5',
@@ -806,9 +800,11 @@ export default function AuthScreen({ theme, setTheme, onPrivacyClick }) {
         '--border-color': '#e4e4e7',
         '--text-primary': '#09090b',
         '--text-secondary': '#71717a'
-      });
+      };
+      setTheme(newTheme);
+      localStorage.setItem('timeroi_guest_theme', JSON.stringify(newTheme));
     } else {
-      setTheme({
+      const newTheme = {
         '--bg-dark': '#09090b',
         '--bg-panel': '#18181b',
         '--bg-panel-hover': '#27272a',
@@ -819,7 +815,9 @@ export default function AuthScreen({ theme, setTheme, onPrivacyClick }) {
         '--border-color': '#27272a',
         '--text-primary': '#fafafa',
         '--text-secondary': '#a1a1aa'
-      });
+      };
+      setTheme(newTheme);
+      localStorage.setItem('timeroi_guest_theme', JSON.stringify(newTheme));
     }
   };
 
@@ -837,39 +835,45 @@ export default function AuthScreen({ theme, setTheme, onPrivacyClick }) {
       return;
     }
 
-    setIsSubmitting(true);
+    try {
+      setIsSubmitting(true);
 
-    if (modalTab === 'signin') {
-      const isSuccess = await login(email.trim(), password);
-      if (!isSuccess) {
+      if (modalTab === 'signin') {
+        const isSuccess = await login(trimmedEmail, password);
+        if (!isSuccess) {
+          setIsSubmitting(false);
+        }
+        // On success, the auth state change will unmount this component
+      } else {
+        if (password !== confirmPassword) {
+          error(t('auth_passwords_mismatch') || 'Passwords do not match!');
+          setIsSubmitting(false);
+          return;
+        }
+        if (password.length < 6) {
+          error(t('auth_password_short') || 'Password must be at least 6 characters.');
+          setIsSubmitting(false);
+          return;
+        }
+        if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+          error(t('auth_password_complex') || 'Password must contain at least one letter and one number.');
+          setIsSubmitting(false);
+          return;
+        }
+        const isSuccess = await signup(trimmedEmail, password);
+        if (isSuccess) {
+          // Automatically login the user after successful registration
+          await login(trimmedEmail, password);
+          setShowLoginModal(false);
+          setPassword('');
+          setConfirmPassword('');
+          setDiscordId('');
+        }
         setIsSubmitting(false);
       }
-      // On success, the auth state change will unmount this component
-    } else {
-      if (password !== confirmPassword) {
-        error(t('auth_passwords_mismatch') || 'Passwords do not match!');
-        setIsSubmitting(false);
-        return;
-      }
-      if (password.length < 6) {
-        error(t('auth_password_short') || 'Password must be at least 6 characters.');
-        setIsSubmitting(false);
-        return;
-      }
-      if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-        error(t('auth_password_complex') || 'Password must contain at least one letter and one number.');
-        setIsSubmitting(false);
-        return;
-      }
-      const isSuccess = await signup(email.trim(), password);
-      if (isSuccess) {
-        // Automatically login the user after successful registration
-        await login(email.trim(), password);
-        setShowLoginModal(false);
-        setPassword('');
-        setConfirmPassword('');
-        setDiscordId('');
-      }
+    } catch (err) {
+      console.error('Auth submit error:', err);
+      error(err.message || 'An unexpected error occurred.');
       setIsSubmitting(false);
     }
   };
@@ -886,13 +890,14 @@ export default function AuthScreen({ theme, setTheme, onPrivacyClick }) {
 
   return (
     <div style={{
-      minHeight: '100vh',
+      height: '100vh',
       width: '100vw',
+      overflowY: 'auto',
+      overflowX: 'hidden',
       background: 'var(--bg-panel)',
       color: 'var(--text-primary)',
       fontFamily: 'system-ui, -apple-system, sans-serif',
       position: 'relative',
-      overflowX: 'hidden',
       transition: 'background 0.2s, color 0.2s'
     }}>
       {/* ─── LANDING HEADER ─── */}
@@ -929,7 +934,7 @@ export default function AuthScreen({ theme, setTheme, onPrivacyClick }) {
             T
           </div>
           <span style={{ fontSize: '1.3rem', fontWeight: '900', letterSpacing: '-0.5px', color: 'var(--text-primary)' }}>
-            TIMEROI <span style={{ color: 'var(--accent-primary)' }}>PRO</span>
+            TIMEROI
           </span>
         </div>
 
@@ -1170,7 +1175,7 @@ export default function AuthScreen({ theme, setTheme, onPrivacyClick }) {
                     T
                   </div>
                   <span style={{ fontSize: '1.1rem', fontWeight: '850', letterSpacing: '-0.5px', color: 'var(--text-primary)' }}>
-                    TIMEROI <span style={{ color: 'var(--accent-primary)' }}>PRO</span>
+                    TIMEROI
                   </span>
                 </div>
               </div>

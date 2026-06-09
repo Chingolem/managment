@@ -25,7 +25,7 @@ const PrivacyPage = lazy(() => import('./components/PrivacyPage.jsx'));
 const StatsPage = lazy(() => import('./components/StatsPage.jsx'));
 const NotFound = lazy(() => import('./components/NotFound.jsx'));
 
-const DEFAULT_THEME = {
+const LIGHT_THEME = {
   '--bg-dark': '#f4f4f5',
   '--bg-panel': '#ffffff',
   '--bg-panel-hover': '#f4f4f5',
@@ -38,13 +38,44 @@ const DEFAULT_THEME = {
   '--text-secondary': '#71717a'
 };
 
+const DARK_THEME = {
+  '--bg-dark': '#09090b',
+  '--bg-panel': '#18181b',
+  '--bg-panel-hover': '#27272a',
+  '--bg-surface': '#111114',
+  '--accent-primary': '#3b82f6',
+  '--accent-hover': '#60a5fa',
+  '--accent-glow': 'rgba(59, 130, 246, 0.15)',
+  '--border-color': '#27272a',
+  '--text-primary': '#fafafa',
+  '--text-secondary': '#a1a1aa'
+};
+
+const getPreferredTheme = () => {
+  if (typeof window !== 'undefined' && window.matchMedia) {
+    const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return isDark ? DARK_THEME : LIGHT_THEME;
+  }
+  return LIGHT_THEME;
+};
+
+const DEFAULT_THEME = getPreferredTheme();
+
 function AppContent() {
   const { user, logout } = useAuth();
   const { success, error } = useToastContext();
   const { t, language } = useLanguage();
   const [showPomodoro, setShowPomodoro]   = useState(false);
   const [showExport,   setShowExport]     = useState(false);
-  const [theme, setTheme] = useState(DEFAULT_THEME);
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const savedGuestTheme = localStorage.getItem('timeroi_guest_theme');
+      if (savedGuestTheme) {
+        try { return JSON.parse(savedGuestTheme); } catch (e) {}
+      }
+    }
+    return DEFAULT_THEME;
+  });
   const [clients, setClients] = useState([]);
   const [activeClientId, setActiveClientId] = useState(null);
   const [archivedClients, setArchivedClients] = useState([]);
@@ -263,6 +294,36 @@ function AppContent() {
       document.documentElement.style.setProperty(key, theme[key]);
     });
   }, [theme]);
+
+  // Detect and apply system theme preference on system theme changes (if no saved theme exists)
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e) => {
+      const username = user?.username?.toLowerCase();
+      const uPrefix = username ? `editflow_crm_${username}_` : '';
+      const savedTheme = localStorage.getItem(uPrefix + 'theme') || localStorage.getItem('timeroi_guest_theme');
+      
+      if (!savedTheme) {
+        setTheme(e.matches ? DARK_THEME : LIGHT_THEME);
+      }
+    };
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleChange);
+    } else {
+      mediaQuery.addListener(handleChange);
+    }
+
+    return () => {
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener('change', handleChange);
+      } else {
+        mediaQuery.removeListener(handleChange);
+      }
+    };
+  }, [user]);
 
   // Cleanup archive items older than 7 days
   useEffect(() => {
@@ -745,8 +806,29 @@ function AppContent() {
               <ClipboardList size={64} style={{ color: 'var(--accent-primary)', opacity: 0.6 }} />
               <h2 style={{ color: 'var(--text-primary)', fontWeight: 800, margin: 0 }}>No Active Projects</h2>
               <p style={{ maxWidth: '400px', margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
-                Use the "+" button in the sidebar to create a new project workspace.
+                Create your first project workspace to get started with TIMEROI.
               </p>
+              <button
+                className="btn btn-primary"
+                onClick={() => setViewMode('setup')}
+                style={{
+                  marginTop: '0.5rem',
+                  padding: '0.75rem 1.75rem',
+                  fontSize: '0.95rem',
+                  fontWeight: '700',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  borderRadius: '8px',
+                  background: 'var(--accent-primary)',
+                  color: 'white',
+                  border: 'none',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px var(--accent-glow)'
+                }}
+              >
+                <Plus size={16} /> Create New Project
+              </button>
             </div>
           ) : (
             <>
