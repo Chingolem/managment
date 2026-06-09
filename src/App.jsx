@@ -892,7 +892,6 @@ export default App;
 
 function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(() => !!user);
-  const [isAuthLoading, setIsAuthLoading] = useState(() => !!user);
   return (
     <>
       <TutorialOverlay />
