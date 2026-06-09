@@ -68,7 +68,14 @@ export default function ExportModal({ client, onClose }) {
       localStorage.removeItem('discord_bot_token'); // Clear bot token if webhook is used
 
       try {
-        const res = await fetch(trimmedUrl);
+        const res = await fetch('/api/discord-proxy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: trimmedUrl,
+            method: 'GET'
+          })
+        });
         if (res.ok) {
           const webhookData = await res.json();
           setBotUser({ username: webhookData.name || 'Webhook Bot', isWebhook: true });
@@ -95,11 +102,27 @@ export default function ExportModal({ client, onClose }) {
     // Otherwise, connect as a Bot Token
     try {
       const headers = { Authorization: `Bot ${tokenOrUrl.trim()}` };
-      const userRes = await fetch('https://discord.com/api/v10/users/@me', { headers });
+      const userRes = await fetch('/api/discord-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: 'https://discord.com/api/v10/users/@me',
+          method: 'GET',
+          headers
+        })
+      });
       if (!userRes.ok) throw new Error('Invalid Bot Token');
       const userObj = await userRes.json();
 
-      const guildsRes = await fetch('https://discord.com/api/v10/users/@me/guilds', { headers });
+      const guildsRes = await fetch('/api/discord-proxy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: 'https://discord.com/api/v10/users/@me/guilds',
+          method: 'GET',
+          headers
+        })
+      });
       if (!guildsRes.ok) throw new Error('Could not fetch servers');
       const guildsList = await guildsRes.json();
 
@@ -135,8 +158,14 @@ export default function ExportModal({ client, onClose }) {
     if (selectedGuildId && botToken && botUser && !botUser.isWebhook) {
       const fetchChans = async () => {
         try {
-          const res = await fetch(`https://discord.com/api/v10/guilds/${selectedGuildId}/channels`, { 
-            headers: { Authorization: `Bot ${botToken.trim()}` }
+          const res = await fetch('/api/discord-proxy', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              url: `https://discord.com/api/v10/guilds/${selectedGuildId}/channels`,
+              method: 'GET',
+              headers: { Authorization: `Bot ${botToken.trim()}` }
+            })
           });
           if (res.ok) {
             const chans = await res.json();
@@ -344,10 +373,29 @@ export default function ExportModal({ client, onClose }) {
         const url = isWebhook ? webhookUrl : `https://discord.com/api/v10/channels/${selectedChannelId}/messages`;
         const headers = isWebhook ? {} : { Authorization: `Bot ${botToken.trim()}` };
 
-        const res = await fetch(url, {
+        const res = await fetch('/api/discord-proxy', {
           method: 'POST',
-          headers,
-          body: formData
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url,
+            method: 'POST',
+            headers,
+            isMultipart: true,
+            fileContent: csv,
+            fileName: `${client.name.replace(/\s+/g, '_')}_Report.csv`,
+            body: {
+              content: `**${client.name}** report exported from TIMEROI`,
+              embeds: [{
+                title: `Project Report Summary`,
+                color: 0x3b82f6,
+                fields: [
+                  { name: 'Completed Tasks', value: `${doneCount}/${videos.length}`, inline: true },
+                  { name: 'Total Time', value: formatTime(totalTime), inline: true },
+                  { name: 'Revenue', value: `$${totalRevenue.toFixed(2)}`, inline: true }
+                ]
+              }]
+            }
+          })
         });
         if (res.ok) {
           success('Successfully sent to Discord!');
