@@ -194,7 +194,7 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
         type: activeTool,
         x: cx - 80,
         y: cy - 80,
-        text: activeTool === 'sticky' ? 'New Sticky Note' : 'Double click to edit text',
+        text: '',
         color: activeTool === 'sticky' ? '#fef08a' : 'transparent'
       };
       updateClient(client.id, {
@@ -299,7 +299,7 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
       type: 'sticky',
       x: cx - 80,
       y: cy - 80,
-      text: 'Double click to edit notes',
+      text: '',
       color: '#fef08a'
     };
     updateClient(client.id, {
@@ -309,6 +309,9 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
 
   // Drag handles
   const startDrag = (e, id, currentX, currentY) => {
+    if (e.target.closest('button') || e.target.closest('input') || e.target.closest('textarea') || e.target.closest('select')) {
+      return;
+    }
     e.stopPropagation();
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
@@ -1039,7 +1042,7 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
                 <textarea
                   value={note.text}
                   onChange={(e) => handleUpdateNoteText(note.id, e.target.value)}
-                  placeholder="Type notes here..."
+                  placeholder={isTextType ? "Type text here..." : "Type notes here..."}
                   style={{
                     flex: 1,
                     background: 'transparent',

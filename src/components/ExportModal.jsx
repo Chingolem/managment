@@ -4,7 +4,7 @@ import { useToastContext } from '../hooks/useToast.jsx';
 import { useAuth, getTimerKeys } from '../hooks/useAuth.jsx';
 import { escapeHTML, sanitizeURL } from '../hooks/sanitize.js';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 function formatTime(seconds) {
   if (!seconds) return '0m';
@@ -413,7 +413,7 @@ export default function ExportModal({ client, onClose }) {
     });
 
     // Draw table
-    doc.autoTable({
+    autoTable(doc, {
       startY: 40,
       head: [headers],
       body: rows,
