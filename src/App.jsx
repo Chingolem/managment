@@ -749,10 +749,8 @@ function AppContent() {
                   <button className="btn btn-outline" onClick={() => setIsAddingClient(false)}>{t('goBack')}</button>
                 </div>
               )}
-              <SetupForm onCreate={handleCreateClient} />
-              <div style={{ marginTop: '3rem' }}>
-                <ArchiveSection archivedClients={workspaceArchivedClients} onRestore={restoreClient} onPermanentDelete={permanentDeleteClient} />
-              </div>
+               <SetupForm onCreate={handleCreateClient} />
+             </div>
             </div>
           ) : !activeClient ? (
             <div style={{
