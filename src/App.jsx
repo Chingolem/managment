@@ -8,6 +8,7 @@ import { useAuth, WORKSPACE_CONFIGS, getTimerKeys } from './hooks/useAuth.jsx';
 
 import Sidebar from './components/Sidebar.jsx';
 import SetupForm from './components/SetupForm.jsx';
+import AuthScreen from './components/AuthScreen.jsx';
 import ArchiveSection from './components/ArchiveSection.jsx';
 import ToastContainer from './components/Toast.jsx';
 import VideoEditorWorkspace from './components/VideoEditorWorkspace.jsx';
@@ -585,7 +586,7 @@ function AppContent() {
           Loading...
         </div>
       ) : (
-        <SetupForm />
+        <AuthScreen theme={theme} setTheme={setTheme} onPrivacyClick={() => setViewMode('privacy')} />
       )}
     </>
   );

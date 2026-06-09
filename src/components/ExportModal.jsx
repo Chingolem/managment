@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
-import { X, Download } from 'lucide-react';
+import { X, Download, MessageSquare } from 'lucide-react';
+import { useToastContext } from '../hooks/useToast.jsx';
 import { useAuth, getTimerKeys } from '../hooks/useAuth.jsx';
 import { escapeHTML, sanitizeURL } from '../hooks/sanitize.js';
 
@@ -17,6 +18,10 @@ export default function ExportModal({ client, onClose }) {
   const { user } = useAuth();
   const keys = getTimerKeys(user?.role || 'video_editor');
   const [format, setFormat] = useState('pdf');
+  const { success, error } = useToastContext();
+  const [destination, setDestination] = useState('local');
+  const [webhookUrl, setWebhookUrl] = useState(() => localStorage.getItem('discord_webhook') || '');
+  const [isExporting, setIsExporting] = useState(false);
   const [includeNotes, setIncludeNotes] = useState(true);
   const [includeTime, setIncludeTime] = useState(true);
   const [includeIdleTime, setIncludeIdleTime] = useState(true);
@@ -256,6 +261,27 @@ export default function ExportModal({ client, onClose }) {
                 <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>{s.label}</div>
               </div>
             ))}
+          </div>
+
+          {/* Destination */}
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Destination</div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {pill('💻 Local Device', destination === 'local', () => setDestination('local'))}
+              {pill('💬 Discord Bot', destination === 'discord', () => setDestination('discord'))}
+            </div>
+            {destination === 'discord' && (
+              <div style={{ marginTop: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>Discord Webhook URL</label>
+                <input 
+                  type="text" 
+                  value={webhookUrl}
+                  onChange={e => setWebhookUrl(e.target.value)}
+                  placeholder="https://discord.com/api/webhooks/..."
+                  style={{ width: '100%', padding: '0.65rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Format */}
