@@ -48,6 +48,14 @@ function AppContent() {
   const [showWelcome,  setShowWelcome]    = useState(false);
   const lastSyncErrorTime = useRef(0);
 
+  // If no user, show SetupForm
+  if (!user) {
+    return <SetupForm />;
+  }
+
+  // Rest of the component remains the same...
+  
+
   const workspaceClients = useMemo(() => {
     return clients.filter(c => (c.role || 'video_editor') === (user?.role || 'video_editor'));
   }, [clients, user?.role]);
@@ -891,19 +899,10 @@ function AppContent() {
 export default App;
 
 function App() {
-  const [isAuthLoading, setIsAuthLoading] = useState(() => !!user);
   return (
     <>
       <TutorialOverlay />
-      {isAuthLoading ? (
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg-dark)', color: 'var(--text-primary)' }}>
-          Loading...
-        </div>
-      ) : user ? (
-        <AppContent />
-      ) : (
-        <SetupForm />
-      )}
+      <AppContent />
     </>
   );
 }
