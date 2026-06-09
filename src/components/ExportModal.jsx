@@ -3,6 +3,8 @@ import { X, Download, MessageSquare, Bot, LogOut, RefreshCw } from 'lucide-react
 import { useToastContext } from '../hooks/useToast.jsx';
 import { useAuth, getTimerKeys } from '../hooks/useAuth.jsx';
 import { escapeHTML, sanitizeURL } from '../hooks/sanitize.js';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 function formatTime(seconds) {
   if (!seconds) return '0m';
@@ -339,6 +341,97 @@ export default function ExportModal({ client, onClose }) {
     setTimeout(() => { win.focus(); win.print(); }, 500);
   };
 
+  const generatePDFBase64 = () => {
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    // Title & Brand
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(37, 99, 235); // Blue Accent
+    doc.text(`${client.name || 'Project'} Report`, 14, 20);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.setTextColor(113, 113, 122); // Gray
+    doc.text(`Generated on ${new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`, 14, 26);
+
+    // Summary stats text
+    let statText = `Tasks: ${doneCount}/${videos.length}`;
+    if (includeTime) statText += `   |   Time Worked: ${formatTime(totalTime)}`;
+    if (includeIdleTime) statText += `   |   Idle Time: ${formatTime(totalIdleTime)}`;
+    if (includePrice) statText += `   |   Revenue: $${totalRevenue.toFixed(2)}`;
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.setTextColor(30, 41, 59); // Dark blue-gray
+    doc.text(statText, 14, 34);
+
+    // Table Headers
+    const headers = ['#', 'Title', 'Length', 'Status'];
+    if (includeTime) headers.push('Time Worked');
+    if (includeIdleTime) headers.push('Idle Time');
+    if (includePrice) headers.push('Price');
+    if (includeLinks) headers.push('Links');
+    if (includeNotes) headers.push('Notes');
+    headers.push('Deadline', 'Done');
+
+    // Table Body Rows
+    const rows = videos.map((v, i) => {
+      const vStatus = v[keys.status] || 'not_started';
+      const vTotalSeconds = v[keys.totalSeconds] || 0;
+      const vIdleGaps = v[keys.idleGaps] || [];
+      const vIdleSeconds = vIdleGaps.reduce((a, g) => a + g, 0);
+      const vFinishedCount = v[keys.finishedCount] || 0;
+
+      const statusLabels = { not_started: 'Not Started', started: 'In Progress', paused: 'Paused', finished: 'Completed' };
+      
+      const row = [
+        i + 1,
+        v.note || 'Untitled',
+        v.videoLength || '—',
+        statusLabels[vStatus] || 'Not Started'
+      ];
+      if (includeTime) row.push(formatTime(vTotalSeconds));
+      if (includeIdleTime) row.push(formatTime(vIdleSeconds));
+      if (includePrice) row.push(`$${v.price || 0}`);
+      if (includeLinks) {
+        const parts = [];
+        if (v.sourceLink) parts.push('Source');
+        if (v.finalLink) parts.push('Final');
+        row.push(parts.join(' | ') || '—');
+      }
+      if (includeNotes) {
+        row.push(v.noteDetails || '—');
+      }
+      row.push(v.deadline || '—');
+      row.push(`${vFinishedCount}x`);
+      return row;
+    });
+
+    // Draw table
+    doc.autoTable({
+      startY: 40,
+      head: [headers],
+      body: rows,
+      theme: 'striped',
+      headStyles: { fillColor: [37, 99, 235], textColor: [255, 255, 255], fontStyle: 'bold' },
+      styles: { fontSize: 8, cellPadding: 3, font: 'helvetica' },
+      columnStyles: {
+        1: { cellWidth: 50 }, // Title width
+        ...(includeNotes ? { [headers.indexOf('Notes')]: { cellWidth: 50 } } : {})
+      }
+    });
+
+    // Return as base64 string
+    const outputString = doc.output('datauristring');
+    const base64Index = outputString.indexOf(';base64,') + 8;
+    return outputString.substring(base64Index);
+  };
+
   const doExport = async () => {
     if (destination === 'discord') {
       if (!botUser) {
@@ -351,23 +444,30 @@ export default function ExportModal({ client, onClose }) {
         return;
       }
       setIsExporting(true);
-      
-      const csv = generateCSV();
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const formData = new FormData();
-      formData.append('file', blob, `${client.name.replace(/\s+/g, '_')}_Report.csv`);
-      formData.append('payload_json', JSON.stringify({
-        content: `**${client.name}** report exported from TIMEROI`,
-        embeds: [{
-          title: `Project Report Summary`,
-          color: 0x3b82f6,
-          fields: [
-            { name: 'Completed Tasks', value: `${doneCount}/${videos.length}`, inline: true },
-            { name: 'Total Time', value: formatTime(totalTime), inline: true },
-            { name: 'Revenue', value: `$${totalRevenue.toFixed(2)}`, inline: true }
-          ]
-        }]
-      }));
+
+      const isPdf = format === 'pdf';
+      let filePayload = {};
+
+      if (isPdf) {
+        try {
+          const base64Pdf = generatePDFBase64();
+          filePayload = {
+            fileBase64: base64Pdf,
+            fileName: `${client.name.replace(/\s+/g, '_')}_Report.pdf`
+          };
+        } catch (pdfErr) {
+          console.error(pdfErr);
+          error('Failed to generate PDF: ' + pdfErr.message);
+          setIsExporting(false);
+          return;
+        }
+      } else {
+        const csv = generateCSV();
+        filePayload = {
+          fileContent: csv,
+          fileName: `${client.name.replace(/\s+/g, '_')}_Report.csv`
+        };
+      }
 
       try {
         const url = isWebhook ? webhookUrl : `https://discord.com/api/v10/channels/${selectedChannelId}/messages`;
@@ -381,8 +481,7 @@ export default function ExportModal({ client, onClose }) {
             method: 'POST',
             headers,
             isMultipart: true,
-            fileContent: csv,
-            fileName: `${client.name.replace(/\s+/g, '_')}_Report.csv`,
+            ...filePayload,
             body: {
               content: `**${client.name}** report exported from TIMEROI`,
               embeds: [{
@@ -565,20 +664,24 @@ export default function ExportModal({ client, onClose }) {
           </div>
 
           {/* Format (Only for Local) */}
-          {destination === 'local' && (
-            <div>
-              <div style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Format</div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                {pill('📄 PDF', format === 'pdf', () => setFormat('pdf'))}
-                {pill('📊 CSV', format === 'csv', () => setFormat('csv'))}
-              </div>
-              {format === 'pdf' && (
-                <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                  Opens a print-ready page — use browser "Save as PDF" option.
-                </p>
-              )}
+          {/* Format */}
+          <div>
+            <div style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Format</div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              {pill('📄 PDF', format === 'pdf', () => setFormat('pdf'))}
+              {pill('📊 CSV', format === 'csv', () => setFormat('csv'))}
             </div>
-          )}
+            {format === 'pdf' && destination === 'local' && (
+              <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                Opens a print-ready page — use browser "Save as PDF" option.
+              </p>
+            )}
+            {format === 'pdf' && destination === 'discord' && (
+              <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                Generates a PDF document and attaches it to the Discord message.
+              </p>
+            )}
+          </div>
 
           {/* Include options */}
           <div>

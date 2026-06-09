@@ -44,7 +44,14 @@ export default async function handler(req, res) {
 
     if (isMultipart) {
       const discordFormData = new FormData();
-      const blob = new Blob([fileContent], { type: 'text/csv' });
+      let blob;
+      if (req.body.fileBase64) {
+        const buffer = Buffer.from(req.body.fileBase64, 'base64');
+        const mimeType = fileName.endsWith('.pdf') ? 'application/pdf' : 'text/csv';
+        blob = new Blob([buffer], { type: mimeType });
+      } else {
+        blob = new Blob([fileContent], { type: 'text/csv' });
+      }
       discordFormData.append('files[0]', blob, fileName || 'Report.csv');
       
       if (body) {
