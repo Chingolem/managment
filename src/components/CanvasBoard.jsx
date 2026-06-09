@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Play, Pause, CheckCircle, RefreshCcw, GripVertical, Link, Maximize2, Trash2,
-  MousePointer, PenTool, StickyNote, Type, Trash, Film, ZoomIn, ZoomOut, RotateCcw
+  MousePointer, PenTool, StickyNote, Type, Trash, Film, ZoomIn, ZoomOut, RotateCcw, X
 } from 'lucide-react';
 import { useLanguage } from '../hooks/useLanguage.jsx';
 import { useAuth, WORKSPACE_CONFIGS, getTimerKeys } from '../hooks/useAuth.jsx';
@@ -1030,10 +1030,20 @@ export default function CanvasBoard({ client, updateVideo, updateClient, onOpenF
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDeleteNote(note.id); }}
-                      style={{ background: 'none', border: 'none', color: 'inherit', cursor: 'pointer', padding: 0 }}
-                      title="Delete"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'inherit',
+                        cursor: 'pointer',
+                        padding: '1px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        borderRadius: '4px'
+                      }}
+                      title="Delete Note"
                     >
-                      <Trash size={11} />
+                      <X size={12} style={{ color: 'var(--danger)' }} />
                     </button>
                   </div>
                 </div>
