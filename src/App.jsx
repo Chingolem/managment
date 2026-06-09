@@ -43,20 +43,6 @@ function AppContent() {
   const { user, logout } = useAuth();
   const { success, error } = useToastContext();
   const { t, language } = useLanguage();
-
-  const [theme, setTheme] = useState(DEFAULT_THEME);
-  const [clients, setClients] = useState([]);
-  const [activeClientId, setActiveClientId] = useState(null);
-  const [archivedClients, setArchivedClients] = useState([]);
-  const [isThemeModalOpen, setIsThemeModalOpen] = useState(false);
-  const [isAddingClient, setIsAddingClient] = useState(false);
-  const [fullScreenVideoId, setFullScreenVideoId] = useState(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
-  const [viewMode, setViewMode] = useState('dashboard');
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-  const [previousUser, setPreviousUser] = useState(null);
-  const [isAuthLoading, setIsAuthLoading] = useState(() => !!user);
   const [showPomodoro, setShowPomodoro]   = useState(false);
   const [showExport,   setShowExport]     = useState(false);
   const [showWelcome,  setShowWelcome]    = useState(false);
@@ -87,7 +73,7 @@ function AppContent() {
       return () => clearTimeout(timer);
     }
     setPreviousUser(user);
-  }, [user, previousUser]);
+  }, [user, previousUser, setIsAuthLoading]);
 
   useEffect(() => {
     if (user && !isAuthLoading) {
@@ -905,6 +891,8 @@ function AppContent() {
 export default App;
 
 function App() {
+  const [isAuthLoading, setIsAuthLoading] = useState(() => !!user);
+  const [isAuthLoading, setIsAuthLoading] = useState(() => !!user);
   return (
     <>
       <TutorialOverlay />
