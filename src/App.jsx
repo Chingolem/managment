@@ -58,10 +58,7 @@ function AppContent() {
   const [isAuthLoading, setIsAuthLoading] = useState(() => !!user);
   const lastSyncErrorTime = useRef(0);
 
-  // If no user, show SetupForm
-  if (!user) {
-    return <SetupForm />;
-  }
+
 
   // Rest of the component remains the same...
   
