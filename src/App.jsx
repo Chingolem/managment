@@ -581,6 +581,7 @@ function AppContent() {
     }
   return (
     <>
+      <ToastContainer />
       {isAuthLoading ? (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', background: 'var(--bg-dark)', color: 'var(--text-primary)' }}>
           Loading...

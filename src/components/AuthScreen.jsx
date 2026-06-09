@@ -997,7 +997,7 @@ export default function AuthScreen({ theme, setTheme, onPrivacyClick }) {
           color: 'var(--text-primary)',
           margin: 0
         }}>
-          For <AnimatedSubheading />
+          For Creative Teams.
         </h1>
 
         <button
@@ -1025,8 +1025,23 @@ export default function AuthScreen({ theme, setTheme, onPrivacyClick }) {
         <InteractiveHeroCanvas />
       </section>
 
-      {/* ─── INFO SECTION (SCROLLABLE CAPABILITIES SHOWCASE) ─── */}
-      <InfoSection />
+      {/* ─── INFO SECTION ─── */}
+      <section style={{
+        padding: '4rem 6rem',
+        maxWidth: '1000px',
+        margin: '0 auto',
+        textAlign: 'center',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '2rem'
+      }}>
+        <h2 style={{ fontSize: '2rem', fontWeight: '800', color: 'var(--text-primary)' }}>
+          One platform, any workspace.
+        </h2>
+        <p style={{ fontSize: '1.1rem', color: 'var(--text-secondary)' }}>
+          Whether you are a video editor, thumbnail artist, script writer, or manager, TIMEROI gives you the tools to track time, manage projects, and export reports directly to Discord.
+        </p>
+      </section>
 
       <footer style={{
         padding: '4rem 6rem',

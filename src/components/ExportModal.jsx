@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { X, Download, MessageSquare } from 'lucide-react';
+import { useState, useMemo, useEffect } from 'react';
+import { X, Download, MessageSquare, Bot, LogOut, RefreshCw } from 'lucide-react';
 import { useToastContext } from '../hooks/useToast.jsx';
 import { useAuth, getTimerKeys } from '../hooks/useAuth.jsx';
 import { escapeHTML, sanitizeURL } from '../hooks/sanitize.js';
@@ -20,8 +20,18 @@ export default function ExportModal({ client, onClose }) {
   const [format, setFormat] = useState('pdf');
   const { success, error } = useToastContext();
   const [destination, setDestination] = useState('local');
-  const [webhookUrl, setWebhookUrl] = useState(() => localStorage.getItem('discord_webhook') || '');
   const [isExporting, setIsExporting] = useState(false);
+  
+  // Discord Bot & Webhook States
+  const [botToken, setBotToken] = useState(() => localStorage.getItem('discord_bot_token') || localStorage.getItem('discord_webhook_url') || '');
+  const [webhookUrl, setWebhookUrl] = useState(() => localStorage.getItem('discord_webhook_url') || '');
+  const [botUser, setBotUser] = useState(null);
+  const [guilds, setGuilds] = useState([]);
+  const [selectedGuildId, setSelectedGuildId] = useState('');
+  const [channels, setChannels] = useState([]);
+  const [selectedChannelId, setSelectedChannelId] = useState('');
+  const [isBotLoading, setIsBotLoading] = useState(false);
+
   const [includeNotes, setIncludeNotes] = useState(true);
   const [includeTime, setIncludeTime] = useState(true);
   const [includeIdleTime, setIncludeIdleTime] = useState(true);
@@ -37,11 +47,117 @@ export default function ExportModal({ client, onClose }) {
   const totalRevenue = useMemo(() =>
     videos.filter(v => (v[keys.status] || 'not_started') === 'finished').reduce((a, v) => a + (v.price || 0), 0), [videos, keys]);
   const doneCount = videos.filter(v => (v[keys.status] || 'not_started') === 'finished').length;
-
   const activeTime = useMemo(() => totalTime - totalIdleTime, [totalTime, totalIdleTime]);
 
+  // Discord Auto-Connect
+  useEffect(() => {
+    if (destination === 'discord' && botToken && !botUser && !isBotLoading) {
+      handleConnectBot(botToken);
+    }
+  }, [destination]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleConnectBot = async (tokenOrUrl) => {
+    if (!tokenOrUrl.trim()) return;
+    setIsBotLoading(true);
+
+    // Check if it is a Webhook URL
+    if (tokenOrUrl.includes('/api/webhooks/')) {
+      const trimmedUrl = tokenOrUrl.trim();
+      setWebhookUrl(trimmedUrl);
+      localStorage.setItem('discord_webhook_url', trimmedUrl);
+      localStorage.removeItem('discord_bot_token'); // Clear bot token if webhook is used
+
+      try {
+        const res = await fetch(trimmedUrl);
+        if (res.ok) {
+          const webhookData = await res.json();
+          setBotUser({ username: webhookData.name || 'Webhook Bot', isWebhook: true });
+        } else {
+          if (res.status === 404) throw new Error('Webhook not found');
+          setBotUser({ username: 'Discord Webhook', isWebhook: true });
+        }
+      } catch (err) {
+        if (err.message === 'Webhook not found') {
+          error("Webhook Error: Webhook not found");
+          setBotUser(null);
+          localStorage.removeItem('discord_webhook_url');
+          setIsBotLoading(false);
+          return;
+        }
+        // Fallback for CORS or network blocks
+        setBotUser({ username: 'Discord Webhook (Active)', isWebhook: true });
+      }
+      success('Webhook connected successfully!');
+      setIsBotLoading(false);
+      return;
+    }
+
+    // Otherwise, connect as a Bot Token
+    try {
+      const headers = { Authorization: `Bot ${tokenOrUrl.trim()}` };
+      const userRes = await fetch('https://discord.com/api/v10/users/@me', { headers });
+      if (!userRes.ok) throw new Error('Invalid Bot Token');
+      const userObj = await userRes.json();
+
+      const guildsRes = await fetch('https://discord.com/api/v10/users/@me/guilds', { headers });
+      if (!guildsRes.ok) throw new Error('Could not fetch servers');
+      const guildsList = await guildsRes.json();
+
+      setBotUser(userObj);
+      setGuilds(guildsList);
+      setWebhookUrl(''); // Clear webhook URL if bot token is used
+      localStorage.setItem('discord_bot_token', tokenOrUrl.trim());
+      localStorage.removeItem('discord_webhook_url');
+
+      if (guildsList.length > 0) {
+        setSelectedGuildId(guildsList[0].id);
+      }
+    } catch (err) {
+      error("Discord Error: " + err.message);
+      setBotUser(null);
+      localStorage.removeItem('discord_bot_token');
+    } finally {
+      setIsBotLoading(false);
+    }
+  };
+
+  const handleDisconnectBot = () => {
+    setBotUser(null);
+    setGuilds([]);
+    setChannels([]);
+    setBotToken('');
+    setWebhookUrl('');
+    localStorage.removeItem('discord_bot_token');
+    localStorage.removeItem('discord_webhook_url');
+  };
+
+  useEffect(() => {
+    if (selectedGuildId && botToken && botUser && !botUser.isWebhook) {
+      const fetchChans = async () => {
+        try {
+          const res = await fetch(`https://discord.com/api/v10/guilds/${selectedGuildId}/channels`, { 
+            headers: { Authorization: `Bot ${botToken.trim()}` }
+          });
+          if (res.ok) {
+            const chans = await res.json();
+            const textChans = chans.filter(c => c.type === 0);
+            setChannels(textChans);
+            if (textChans.length > 0) setSelectedChannelId(textChans[0].id);
+            else setSelectedChannelId('');
+          }
+        } catch (err) {
+          console.error('Channel fetch error', err);
+        }
+      };
+      fetchChans();
+    } else {
+      setChannels([]);
+      setSelectedChannelId('');
+    }
+  }, [selectedGuildId, botToken, botUser]);
+
   /* ── CSV export ───────────────────────────────────────────────── */
-  const exportCSV = () => {
+  const generateCSV = () => {
     const headers = ['#', 'Title', 'Video Length', 'Status', includeTime && 'Time Worked', includeIdleTime && 'Idle Time', includePrice && 'Price ($)', includeNotes && 'Notes', includeLinks && 'Source Link', includeLinks && 'Final Link', 'Deadline', 'Completions'].filter(Boolean);
     const rows = videos.map((v, i) => {
       const vStatus = v[keys.status] || 'not_started';
@@ -64,7 +180,11 @@ export default function ExportModal({ client, onClose }) {
       row.push(vFinishedCount);
       return row.join(',');
     });
-    const csv = [headers.join(','), ...rows].join('\n');
+    return [headers.join(','), ...rows].join('\n');
+  };
+
+  const exportCSV = () => {
+    const csv = generateCSV();
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -190,9 +310,61 @@ export default function ExportModal({ client, onClose }) {
     setTimeout(() => { win.focus(); win.print(); }, 500);
   };
 
-  const doExport = () => {
-    if (format === 'csv') exportCSV();
-    else exportPDF();
+  const doExport = async () => {
+    if (destination === 'discord') {
+      if (!botUser) {
+        error("Please connect bot or webhook first.");
+        return;
+      }
+      const isWebhook = botUser.isWebhook;
+      if (!isWebhook && !selectedChannelId) {
+        error("Please select a channel.");
+        return;
+      }
+      setIsExporting(true);
+      
+      const csv = generateCSV();
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const formData = new FormData();
+      formData.append('file', blob, `${client.name.replace(/\s+/g, '_')}_Report.csv`);
+      formData.append('payload_json', JSON.stringify({
+        content: `**${client.name}** report exported from TIMEROI`,
+        embeds: [{
+          title: `Project Report Summary`,
+          color: 0x3b82f6,
+          fields: [
+            { name: 'Completed Tasks', value: `${doneCount}/${videos.length}`, inline: true },
+            { name: 'Total Time', value: formatTime(totalTime), inline: true },
+            { name: 'Revenue', value: `$${totalRevenue.toFixed(2)}`, inline: true }
+          ]
+        }]
+      }));
+
+      try {
+        const url = isWebhook ? webhookUrl : `https://discord.com/api/v10/channels/${selectedChannelId}/messages`;
+        const headers = isWebhook ? {} : { Authorization: `Bot ${botToken.trim()}` };
+
+        const res = await fetch(url, {
+          method: 'POST',
+          headers,
+          body: formData
+        });
+        if (res.ok) {
+          success('Successfully sent to Discord!');
+          onClose();
+        } else {
+          const data = await res.json();
+          error('Failed to send to Discord: ' + (data.message || 'Unknown error'));
+        }
+      } catch (err) {
+        error('Error sending to Discord: ' + err.message);
+      } finally {
+        setIsExporting(false);
+      }
+    } else {
+      if (format === 'csv') exportCSV();
+      else exportPDF();
+    }
   };
 
   const pill = (label, active, onClick) => (
@@ -270,33 +442,95 @@ export default function ExportModal({ client, onClose }) {
               {pill('💻 Local Device', destination === 'local', () => setDestination('local'))}
               {pill('💬 Discord Bot', destination === 'discord', () => setDestination('discord'))}
             </div>
+            
             {destination === 'discord' && (
-              <div style={{ marginTop: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.35rem' }}>Discord Webhook URL</label>
-                <input 
-                  type="text" 
-                  value={webhookUrl}
-                  onChange={e => setWebhookUrl(e.target.value)}
-                  placeholder="https://discord.com/api/webhooks/..."
-                  style={{ width: '100%', padding: '0.65rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }}
-                />
+              <div style={{ marginTop: '1rem', background: 'var(--bg-dark)', padding: '1rem', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                {!botUser ? (
+                  <>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                      <Bot size={14} /> Connect Discord (Bot Token or Webhook URL)
+                    </label>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                      <input 
+                        type={botToken.startsWith('http') ? 'text' : 'password'} 
+                        value={botToken}
+                        onChange={e => setBotToken(e.target.value)}
+                        placeholder="Paste Bot Token or Webhook URL here..."
+                        style={{ flex: 1, padding: '0.65rem 0.8rem', borderRadius: '8px', border: '1px solid var(--border-color)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '0.85rem', outline: 'none' }}
+                        onKeyDown={e => e.key === 'Enter' && handleConnectBot(botToken)}
+                      />
+                      <button 
+                        onClick={() => handleConnectBot(botToken)}
+                        disabled={isBotLoading || !botToken}
+                        style={{ padding: '0 1rem', borderRadius: '8px', background: 'var(--accent-primary)', color: 'white', border: 'none', fontWeight: 'bold', cursor: isBotLoading ? 'wait' : 'pointer' }}
+                      >
+                        {isBotLoading ? <RefreshCw size={16} className="spin" /> : 'Connect'}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: botUser.isWebhook ? 0 : '1rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {botUser.avatar ? (
+                          <img src={`https://cdn.discordapp.com/avatars/${botUser.id}/${botUser.avatar}.png`} alt="Bot Avatar" style={{ width: 24, height: 24, borderRadius: '50%' }} />
+                        ) : <Bot size={24} />}
+                        <span style={{ fontSize: '0.85rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{botUser.username}</span>
+                        {botUser.isWebhook && <span style={{ fontSize: '0.65rem', background: 'var(--accent-glow)', color: 'var(--accent-primary)', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>WEBHOOK</span>}
+                      </div>
+                      <button onClick={handleDisconnectBot} style={{ background: 'none', border: 'none', color: 'var(--danger)', fontSize: '0.75rem', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                        <LogOut size={12} /> Disconnect
+                      </button>
+                    </div>
+                    
+                    {!botUser.isWebhook && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 'bold', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Select Server</label>
+                          <select 
+                            value={selectedGuildId} 
+                            onChange={e => setSelectedGuildId(e.target.value)}
+                            style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none', fontSize: '0.8rem' }}
+                          >
+                            {guilds.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+                            {guilds.length === 0 && <option value="">No servers found</option>}
+                          </select>
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 'bold', color: 'var(--text-secondary)', marginBottom: '0.2rem' }}>Select Channel</label>
+                          <select 
+                            value={selectedChannelId} 
+                            onChange={e => setSelectedChannelId(e.target.value)}
+                            style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', background: 'var(--bg-surface)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', outline: 'none', fontSize: '0.8rem' }}
+                            disabled={!selectedGuildId || channels.length === 0}
+                          >
+                            {channels.map(c => <option key={c.id} value={c.id}># {c.name}</option>)}
+                            {channels.length === 0 && <option value="">No text channels found</option>}
+                          </select>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
           </div>
 
-          {/* Format */}
-          <div>
-            <div style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Format</div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              {pill('📄 PDF', format === 'pdf', () => setFormat('pdf'))}
-              {pill('📊 CSV', format === 'csv', () => setFormat('csv'))}
+          {/* Format (Only for Local) */}
+          {destination === 'local' && (
+            <div>
+              <div style={{ fontSize: '0.72rem', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.6rem' }}>Format</div>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                {pill('📄 PDF', format === 'pdf', () => setFormat('pdf'))}
+                {pill('📊 CSV', format === 'csv', () => setFormat('csv'))}
+              </div>
+              {format === 'pdf' && (
+                <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                  Opens a print-ready page — use browser "Save as PDF" option.
+                </p>
+              )}
             </div>
-            {format === 'pdf' && (
-              <p style={{ margin: '0.5rem 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                Opens a print-ready page — use browser "Save as PDF" option.
-              </p>
-            )}
-          </div>
+          )}
 
           {/* Include options */}
           <div>
@@ -311,19 +545,21 @@ export default function ExportModal({ client, onClose }) {
           {/* Export button */}
           <button
             onClick={doExport}
+            disabled={isExporting}
             style={{
               width: '100%', padding: '0.85rem', borderRadius: '12px', border: 'none',
-              background: 'var(--accent-primary)', color: 'white', cursor: 'pointer',
+              background: 'var(--accent-primary)', color: 'white', cursor: isExporting ? 'not-allowed' : 'pointer',
               fontWeight: '800', fontSize: '0.95rem', display: 'flex', alignItems: 'center',
               justifyContent: 'center', gap: '0.5rem',
               boxShadow: '0 4px 16px var(--accent-primary)55',
-              transition: 'transform 0.1s'
+              transition: 'transform 0.1s',
+              opacity: isExporting ? 0.7 : 1
             }}
-            onMouseDown={e => e.currentTarget.style.transform = 'scale(0.98)'}
-            onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
+            onMouseDown={e => !isExporting && (e.currentTarget.style.transform = 'scale(0.98)')}
+            onMouseUp={e => !isExporting && (e.currentTarget.style.transform = 'scale(1)')}
           >
-            <Download size={18} />
-            Export {format.toUpperCase()}
+            {destination === 'discord' ? <MessageSquare size={18} /> : <Download size={18} />}
+            {isExporting ? 'Exporting...' : `Export to ${destination === 'discord' ? 'Discord' : format.toUpperCase()}`}
           </button>
         </div>
       </div>
